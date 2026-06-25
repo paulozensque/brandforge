@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  companies Company[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  industry    String
+  segment     String?
+  website     String?
+  foundedYear Int?
+  teamSize    String?
+  location    String?
+
+  mission       String?  @db.Text
+  vision        String?  @db.Text
+  purpose       String?  @db.Text
+  values        String[] @default([])
+  differentials String[] @default([])
+
+  targetAudience  String?  @db.Text
+  mainCompetitors String[] @default([])
+  marketPosition  String?  @db.Text
+  priceRange      String?
+
+  brandTone       String[] @default([])
+  brandKeywords   String[] @default([])
+  inspirations    String[] @default([])
+  avoidWords      String[] @default([])
+
+  currentProblems String?  @db.Text
+  goals           String?  @db.Text
+  timeline        String?
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandReports  BrandReport[]
+  marketReports MarketReport[]
+
+  @@index([userId])
+}
+
+model BrandReport {
+  id        String   @id @default(cuid())
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    ReportStatus @default(GENERATING)
+
+  brandArchetype    Json?
+  brandPositioning  Json?
+  brandVoice        Json?
+  brandStory        Json?
+  visualIdentity    Json?
+  brandPurpose      Json?
+  competitorAnalysis Json?
+  brandEcosystem    Json?
+  actionPlan        Json?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model MarketReport {
+  id        String   @id @default(cuid())
+  companyId String
+  createdAt DateTime @default(now())
+  status    ReportStatus @default(GENERATING)
+  data      Json?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+enum ReportStatus {
+  GENERATING
+  COMPLETED
+  FAILED
+}
