@@ -1,51 +1,106 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { AppShell } from "@/components/layout/app-shell"
+
+const modules = [
+  {
+    title: "Análise da Empresa",
+    description: "Diagnóstico de branding, posicionamento, oferta e plano de ação (The Futur + King Kong).",
+    href: "/intel/empresa",
+    icon: "🏢",
+    color: "from-purple-500 to-indigo-600",
+    status: "Ativo",
+  },
+  {
+    title: "Análise de Mercado",
+    description: "Mapeamento de concorrentes, público, oportunidades e estratégia de entrada.",
+    href: "/intel/mercado",
+    icon: "📊",
+    color: "from-blue-500 to-cyan-600",
+    status: "Ativo",
+  },
+  {
+    title: "Produção de Conteúdo",
+    description: "Posts, copies, scripts e calendário editorial com IA.",
+    href: "/conteudo",
+    icon: "✍️",
+    color: "from-orange-500 to-amber-600",
+    status: "Em breve",
+  },
+  {
+    title: "Criativos & Campanhas",
+    description: "Criativos para anúncios + estrutura Meta, Google e TikTok Ads.",
+    href: "/campanhas",
+    icon: "🚀",
+    color: "from-green-500 to-emerald-600",
+    status: "Em breve",
+  },
+  {
+    title: "Zen SDR AI",
+    description: "SDR inteligente no WhatsApp com CRM, qualificação e agendamento automático.",
+    href: "/sdr/dashboard",
+    icon: "🤖",
+    color: "from-emerald-500 to-teal-600",
+    status: "Em construção",
+  },
+  {
+    title: "CRM Kanban",
+    description: "Gestão visual de leads do primeiro contato ao fechamento.",
+    href: "/sdr/crm",
+    icon: "📋",
+    color: "from-indigo-500 to-blue-600",
+    status: "Em construção",
+  },
+]
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b bg-white/50 backdrop-blur-lg sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-brand" />
-            <span className="text-xl font-bold">BrandForge</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/dashboard"><Button variant="ghost">Dashboard</Button></Link>
-            <Link href="/intake"><Button>Criar Marca</Button></Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        <section className="container mx-auto px-6 py-24 text-center">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-              Powered by AI
+    <AppShell>
+      <div className="p-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <span className="text-white font-bold text-xl">E</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              Transforme sua empresa em uma <span className="gradient-text">marca poderosa</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Preencha as informacoes da sua empresa e receba um relatorio completo de branding com arquetipos, posicionamento, voz da marca, identidade visual e plano de acao estrategico.
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <Link href="/intake"><Button size="xl" className="gradient-brand text-white hover:opacity-90">Comecar Agora (Gratis)</Button></Link>
-              <Link href="/dashboard"><Button size="xl" variant="outline">Ver Dashboard</Button></Link>
+            <div>
+              <h1 className="text-3xl font-bold">ECO</h1>
+              <p className="text-sm text-muted-foreground">Estrutura Comercial Online <span className="font-medium">by ZEN POWER</span></p>
             </div>
           </div>
-        </section>
-      </main>
-
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-          <p>BrandForge - Sistema de Inteligencia de Marca</p>
-          <p className="mt-1">Parte do ecossistema de 5 SaaS integrados</p>
+          <p className="text-muted-foreground mt-3 text-lg max-w-2xl">
+            Sistema integrado de inteligência comercial, branding, conteúdo e vendas. 
+            Tudo que sua empresa precisa para escalar de forma estruturada.
+          </p>
         </div>
-      </footer>
-    </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {modules.map((mod) => (
+            <Link key={mod.href} href={mod.href} className="group">
+              <div className="bg-card rounded-xl border p-6 h-full transition-all hover:shadow-lg hover:border-emerald-200 hover:-translate-y-1">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center`}>
+                    <span className="text-2xl">{mod.icon}</span>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    mod.status === "Ativo"
+                      ? "bg-green-100 text-green-700"
+                      : mod.status === "Em construção"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-gray-100 text-gray-500"
+                  }`}>
+                    {mod.status}
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold mb-1 group-hover:text-emerald-600 transition-colors">
+                  {mod.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">{mod.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </AppShell>
   )
 }

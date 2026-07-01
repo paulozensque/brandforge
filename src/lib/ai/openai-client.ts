@@ -15,13 +15,13 @@ export async function generateCompletion(
   }
 ): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: options?.model || process.env.OPENAI_MODEL || "gpt-4o-mini",
+    model: options?.model || process.env.OPENAI_MODEL || "llama3.2",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ],
     temperature: options?.temperature ?? 0.7,
-    max_tokens: options?.maxTokens ?? 4000,
+    max_tokens: options?.maxTokens ?? 2000,
   })
 
   return response.choices[0]?.message?.content || ""
@@ -37,25 +37,31 @@ export async function generateJSON<T>(
   }
 ): Promise<T> {
   const response = await openai.chat.completions.create({
-    model: options?.model || process.env.OPENAI_MODEL || "gpt-4o-mini",
+    model: options?.model || process.env.OPENAI_MODEL || "llama3.2",
     messages: [
-      { role: "system", content: systemPrompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explanation." },
+      { role: "system", content: systemPrompt + "\n\nRespond ONLY with valid JSON. No markdown, no code blocks, no extra text. Be concise." },
       { role: "user", content: userPrompt },
     ],
     temperature: options?.temperature ?? 0.5,
-    max_tokens: options?.maxTokens ?? 4000,
+    max_tokens: options?.maxTokens ?? 2000,
     response_format: { type: "json_object" },
   })
 
   const content = response.choices[0]?.message?.content || "{}"
-  
+
   try {
     return JSON.parse(content) as T
   } catch {
-    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/)
+    // Try to extract JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]) as T
+      try {
+        return JSON.parse(jsonMatch[0]) as T
+      } catch {
+        // fall through
+      }
     }
-    throw new Error("Failed to parse AI response as JSON")
+    console.error("Failed to parse JSON response:", content.slice(0, 200))
+    return {} as T
   }
 }

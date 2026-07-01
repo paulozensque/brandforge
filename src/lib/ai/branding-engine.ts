@@ -48,23 +48,27 @@ export async function generateBrandReport(
     { key: "brandEcosystem", promptFn: brandEcosystemPrompt },
   ]
 
+  // Run all sections in parallel for maximum speed
+  const results = await Promise.allSettled(
+    sections.map(async ({ key, promptFn }) => {
+      const { system, user } = promptFn(company)
+      onProgress?.({ section: key, status: "generating", progress: 0 })
+      try {
+        const data = await generateJSON(system, user, { temperature: 0.6, maxTokens: 2000 })
+        onProgress?.({ section: key, status: "completed", progress: 100 })
+        return { key, data }
+      } catch (error) {
+        console.error(`Failed to generate ${key}:`, error)
+        onProgress?.({ section: key, status: "failed", progress: 100 })
+        return { key, data: { error: `Failed to generate ${key}`, details: String(error) } }
+      }
+    })
+  )
+
   const result: Partial<BrandReportResult> = {}
-  const totalSections = sections.length
-
-  for (let i = 0; i < sections.length; i++) {
-    const { key, promptFn } = sections[i]
-    const { system, user } = promptFn(company)
-
-    onProgress?.({ section: key, status: "generating", progress: Math.round((i / totalSections) * 100) })
-
-    try {
-      const data = await generateJSON(system, user, { temperature: 0.6, maxTokens: 4000 })
-      result[key] = data
-      onProgress?.({ section: key, status: "completed", progress: Math.round(((i + 1) / totalSections) * 100) })
-    } catch (error) {
-      console.error(`Failed to generate ${key}:`, error)
-      result[key] = { error: `Failed to generate ${key}`, details: String(error) }
-      onProgress?.({ section: key, status: "failed", progress: Math.round(((i + 1) / totalSections) * 100) })
+  for (const entry of results) {
+    if (entry.status === "fulfilled") {
+      result[entry.value.key] = entry.value.data
     }
   }
 
@@ -87,5 +91,5 @@ export async function regenerateSection(company: CompanyData, section: ReportSec
   if (!promptFn) throw new Error(`Unknown section: ${section}`)
 
   const { system, user } = promptFn(company)
-  return generateJSON(system, user, { temperature: 0.7, maxTokens: 4000 })
+  return generateJSON(system, user, { temperature: 0.7, maxTokens: 2000 })
 }

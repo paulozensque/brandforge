@@ -13,7 +13,14 @@ export async function POST(req: NextRequest) {
     }
 
     const data = validationResult.data
-    const userId = "demo-user"
+
+    // Ensure demo user exists
+    const demoUser = await prisma.user.upsert({
+      where: { email: "demo@brandforge.local" },
+      update: {},
+      create: { id: "demo-user", email: "demo@brandforge.local", name: "Demo User" },
+    })
+    const userId = demoUser.id
 
     const company = await prisma.company.create({
       data: {
@@ -39,26 +46,29 @@ export async function POST(req: NextRequest) {
       currentProblems: data.currentProblems, goals: data.goals,
     }
 
-    try {
-      const reportData = await generateBrandReport(companyData)
-      await prisma.brandReport.update({
-        where: { id: report.id },
-        data: {
-          status: "COMPLETED",
-          brandArchetype: reportData.brandArchetype as any,
-          brandPurpose: reportData.brandPurpose as any,
-          brandPositioning: reportData.brandPositioning as any,
-          brandVoice: reportData.brandVoice as any,
-          brandStory: reportData.brandStory as any,
-          visualIdentity: reportData.visualIdentity as any,
-          competitorAnalysis: reportData.competitorAnalysis as any,
-          brandEcosystem: reportData.brandEcosystem as any,
-        },
+    // Fire-and-forget: respond immediately, generate in background
+    generateBrandReport(companyData)
+      .then(async (reportData) => {
+        await prisma.brandReport.update({
+          where: { id: report.id },
+          data: {
+            status: "COMPLETED",
+            brandArchetype: reportData.brandArchetype as any,
+            brandPurpose: reportData.brandPurpose as any,
+            brandPositioning: reportData.brandPositioning as any,
+            brandVoice: reportData.brandVoice as any,
+            brandStory: reportData.brandStory as any,
+            visualIdentity: reportData.visualIdentity as any,
+            competitorAnalysis: reportData.competitorAnalysis as any,
+            brandEcosystem: reportData.brandEcosystem as any,
+          },
+        })
+        console.log(`Report ${report.id} completed successfully`)
       })
-    } catch (aiError) {
-      console.error("AI generation failed:", aiError)
-      await prisma.brandReport.update({ where: { id: report.id }, data: { status: "FAILED" } })
-    }
+      .catch(async (aiError) => {
+        console.error("AI generation failed:", aiError)
+        await prisma.brandReport.update({ where: { id: report.id }, data: { status: "FAILED" } })
+      })
 
     return NextResponse.json({ reportId: report.id, companyId: company.id, status: "GENERATING" })
   } catch (error) {
