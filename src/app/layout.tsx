@@ -5,6 +5,8 @@ import { AuthSessionProvider } from "@/components/providers/session-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "ECO - Estrutura Comercial Online | by ZEN POWER",
   description: "Sistema integrado de inteligência comercial, branding, conteúdo e vendas com IA. Zen SDR AI, CRM, Campanhas e mais.",
