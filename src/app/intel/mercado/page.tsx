@@ -1,16 +1,19 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { TagInput } from "@/components/forms/tag-input"
 
+const STORAGE_KEY = "eco-intel-mercado-form"
+const RESULT_KEY = "eco-intel-mercado-result"
+
 export default function AnaliseMercadoPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [reportId, setReportId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(true)
   const [form, setForm] = useState({
     companyName: "",
     industry: "",
@@ -29,7 +32,22 @@ export default function AnaliseMercadoPage() {
     opportunities: "",
   })
 
-  const update = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }))
+  const update = (field: string, value: any) => {
+    setForm((f) => {
+      const updated = { ...f, [field]: value }
+      if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) setForm(JSON.parse(saved))
+      const savedResult = localStorage.getItem(RESULT_KEY)
+      if (savedResult) { setReportId(JSON.parse(savedResult).reportId); setShowForm(false) }
+    }
+  }, [])
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -41,7 +59,9 @@ export default function AnaliseMercadoPage() {
       })
       if (!res.ok) throw new Error("Failed")
       const data = await res.json()
-      router.push(`/intel/mercado/${data.reportId}`)
+      setReportId(data.reportId)
+      setShowForm(false)
+      localStorage.setItem(RESULT_KEY, JSON.stringify({ reportId: data.reportId }))
     } catch {
       alert("Erro ao gerar análise de mercado.")
     } finally {
@@ -49,16 +69,26 @@ export default function AnaliseMercadoPage() {
     }
   }
 
+  const handleNewAnalysis = () => { setShowForm(true); setReportId(null); localStorage.removeItem(RESULT_KEY) }
+
   return (
     <AppShell>
       <div className="p-8 max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Análise de Mercado</h1>
-          <p className="text-muted-foreground mt-1">
-            Mapeie seu mercado, concorrentes e oportunidades com análise estratégica baseada em dados.
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Análise de Mercado</h1>
+            <p className="text-muted-foreground mt-1">
+              Mapeie seu mercado, concorrentes e oportunidades com análise estratégica baseada em dados.
+            </p>
+          </div>
+          {!showForm && reportId && (
+            <Button variant="outline" onClick={handleNewAnalysis}>+ Nova Análise</Button>
+          )}
         </div>
 
+        {!showForm && reportId && <MercadoResults reportId={reportId} />}
+
+        {showForm && (
         <div className="space-y-8">
           <section className="bg-card rounded-xl border p-6 space-y-4">
             <h2 className="text-lg font-semibold">📊 Mercado & Nicho</h2>
@@ -131,10 +161,60 @@ export default function AnaliseMercadoPage() {
           </section>
 
           <Button onClick={handleSubmit} disabled={loading || !form.companyName || !form.industry || !form.niche} size="lg" className="w-full gradient-brand text-white">
-            {loading ? "Analisando mercado..." : "📊 Gerar Análise de Mercado Completa"}
+            {loading ? "🧠 Analisando mercado com IA..." : "📊 Gerar Análise de Mercado Completa"}
           </Button>
         </div>
+        )}
       </div>
     </AppShell>
+  )
+}
+
+function MercadoResults({ reportId }: { reportId: string }) {
+  const [report, setReport] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("marketOverview")
+
+  useEffect(() => {
+    fetch(`/api/intel/mercado/${reportId}`).then(r => r.json()).then(setReport).finally(() => setLoading(false))
+  }, [reportId])
+
+  if (loading) return <div className="text-center py-12"><p>Carregando...</p></div>
+  if (!report) return <div className="text-center py-12"><p className="text-red-600">Não encontrado</p></div>
+
+  const data = report.data || {}
+  const tabs = [
+    { key: "marketOverview", label: "📊 Visão Geral" },
+    { key: "competitorAnalysis", label: "⚔️ Concorrentes" },
+    { key: "audienceInsights", label: "👥 Público" },
+    { key: "opportunities", label: "🚀 Oportunidades" },
+  ]
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {tabs.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${activeTab === tab.key ? "bg-blue-600 text-white" : "bg-card border hover:bg-accent"}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="bg-card rounded-xl border p-6">
+        {data[activeTab] ? (
+          <div className="space-y-4">
+            {Object.entries(data[activeTab]).map(([k, v]) => (
+              <div key={k} className="border-b pb-3 last:border-0">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-1">{k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}</h3>
+                {typeof v === "string" ? <p className="text-sm">{v}</p> :
+                 Array.isArray(v) ? <div className="space-y-1">{(v as any[]).map((item, i) => <div key={i} className="bg-accent/50 rounded p-2 text-sm">{typeof item === "object" ? Object.entries(item).map(([ik,iv]) => <span key={ik} className="mr-2"><strong>{ik}:</strong> {String(iv)}</span>) : String(item)}</div>)}</div> :
+                 typeof v === "object" ? <div className="bg-accent/30 rounded p-3 text-sm">{Object.entries(v as object).map(([ik,iv]) => <div key={ik}><strong>{ik}:</strong> {String(iv)}</div>)}</div> :
+                 <p className="text-sm">{String(v)}</p>}
+              </div>
+            ))}
+          </div>
+        ) : <p className="text-muted-foreground text-center py-8">Seção em processamento...</p>}
+      </div>
+    </div>
   )
 }

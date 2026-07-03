@@ -110,31 +110,27 @@ OPORTUNIDADES: ${body.opportunities || "N/A"}
       },
     ]
 
-    // Fire and forget
-    Promise.allSettled(
+    // Generate all sections and wait for results
+    const results = await Promise.allSettled(
       sections.map(async ({ key, system, user }) => {
         const data = await generateJSON(system, user, { temperature: 0.6, maxTokens: 2000 })
         return { key, data }
       })
-    ).then(async (results) => {
-      const reportData: Record<string, any> = {}
-      for (const entry of results) {
-        if (entry.status === "fulfilled") {
-          reportData[entry.value.key] = entry.value.data
-        }
-      }
+    )
 
-      await prisma.marketReport.update({
-        where: { id: report.id },
-        data: { status: "COMPLETED", data: reportData },
-      })
-      console.log(`Market report ${report.id} completed`)
-    }).catch(async (err) => {
-      console.error("Market analysis failed:", err)
-      await prisma.marketReport.update({ where: { id: report.id }, data: { status: "FAILED" } })
+    const reportData: Record<string, any> = {}
+    for (const entry of results) {
+      if (entry.status === "fulfilled") {
+        reportData[entry.value.key] = entry.value.data
+      }
+    }
+
+    await prisma.marketReport.update({
+      where: { id: report.id },
+      data: { status: "COMPLETED", data: reportData },
     })
 
-    return NextResponse.json({ reportId: report.id, companyId: company.id })
+    return NextResponse.json({ reportId: report.id, companyId: company.id, status: "COMPLETED" })
   } catch (error) {
     console.error("Error in intel/mercado/generate:", error)
     return NextResponse.json({ error: "Erro interno" }, { status: 500 })

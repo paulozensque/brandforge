@@ -147,38 +147,34 @@ Use a fórmula: Value = (Dream Outcome × Perceived Likelihood) / (Time Delay ×
       },
     ]
 
-    // Fire and forget - generate in background
-    Promise.allSettled(
+    // Generate all sections and wait for results (fast with GPT-4o-mini)
+    const results = await Promise.allSettled(
       sections.map(async ({ key, system, user }) => {
         const data = await generateJSON(system, user, { temperature: 0.6, maxTokens: 2000 })
         return { key, data }
       })
-    ).then(async (results) => {
-      const reportData: Record<string, any> = {}
-      for (const entry of results) {
-        if (entry.status === "fulfilled") {
-          reportData[entry.value.key] = entry.value.data
-        }
-      }
+    )
 
-      await prisma.brandReport.update({
-        where: { id: report.id },
-        data: {
-          status: "COMPLETED",
-          brandArchetype: reportData.brandTransformation || null,
-          brandVoice: reportData.brandVoice || null,
-          visualIdentity: reportData.visualIdentity || null,
-          brandPositioning: reportData.ofertaEProdutos || null,
-          brandEcosystem: reportData.actionPlan || null,
-        },
-      })
-      console.log(`Intel report ${report.id} completed`)
-    }).catch(async (err) => {
-      console.error("Intel generation failed:", err)
-      await prisma.brandReport.update({ where: { id: report.id }, data: { status: "FAILED" } })
+    const reportData: Record<string, any> = {}
+    for (const entry of results) {
+      if (entry.status === "fulfilled") {
+        reportData[entry.value.key] = entry.value.data
+      }
+    }
+
+    await prisma.brandReport.update({
+      where: { id: report.id },
+      data: {
+        status: "COMPLETED",
+        brandArchetype: reportData.brandTransformation || null,
+        brandVoice: reportData.brandVoice || null,
+        visualIdentity: reportData.visualIdentity || null,
+        brandPositioning: reportData.ofertaEProdutos || null,
+        brandEcosystem: reportData.actionPlan || null,
+      },
     })
 
-    return NextResponse.json({ reportId: report.id, companyId: company.id })
+    return NextResponse.json({ reportId: report.id, companyId: company.id, status: "COMPLETED" })
   } catch (error) {
     console.error("Error in intel/empresa/generate:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })

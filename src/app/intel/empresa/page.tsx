@@ -1,16 +1,19 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { TagInput } from "@/components/forms/tag-input"
 
+const STORAGE_KEY = "eco-intel-empresa-form"
+const RESULT_KEY = "eco-intel-empresa-result"
+
 export default function AnaliseEmpresaPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [reportId, setReportId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(true)
   const [form, setForm] = useState({
     // Dados da empresa
     name: "",
@@ -45,36 +48,69 @@ export default function AnaliseEmpresaPage() {
     monthlyBudget: "",
   })
 
-  const update = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }))
+  const update = (field: string, value: any) => {
+    setForm((f) => {
+      const updated = { ...f, [field]: value }
+      if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  // Load saved form and result from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) setForm(JSON.parse(saved))
+      const savedResult = localStorage.getItem(RESULT_KEY)
+      if (savedResult) {
+        setReportId(JSON.parse(savedResult).reportId)
+        setShowForm(false)
+      }
+    }
+  }, [])
 
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/intel/empresa/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) throw new Error("Failed")
-      const data = await res.json()
-      router.push(`/intel/empresa/${data.reportId}`)
-    } catch {
+      const response = await fetch("/api/intel/empresa/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
+      if (!response.ok) throw new Error("Failed")
+      const data = await response.json()
+      setReportId(data.reportId)
+      setShowForm(false)
+      localStorage.setItem(RESULT_KEY, JSON.stringify({ reportId: data.reportId }))
+    } catch (error) {
       alert("Erro ao gerar análise. Verifique os campos e tente novamente.")
     } finally {
       setLoading(false)
     }
   }
 
+  const handleNewAnalysis = () => {
+    setShowForm(true)
+    setReportId(null)
+    localStorage.removeItem(RESULT_KEY)
+  }
+
   return (
     <AppShell>
       <div className="p-8 max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Análise da Empresa</h1>
-          <p className="text-muted-foreground mt-1">
-            Preencha os dados para gerar uma análise estratégica completa com base nas metodologias The Futur e King Kong.
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Análise da Empresa</h1>
+            <p className="text-muted-foreground mt-1">
+              Preencha os dados para gerar uma análise estratégica completa com base nas metodologias The Futur e King Kong.
+            </p>
+          </div>
+          {!showForm && reportId && (
+            <Button variant="outline" onClick={handleNewAnalysis}>+ Nova Análise</Button>
+          )}
         </div>
 
+        {/* Show results if we have a reportId */}
+        {!showForm && reportId && <EmpresaResults reportId={reportId} />}
+
+        {/* Show form */}
+        {showForm && (
         <div className="space-y-8">
           {/* Seção 1: Dados básicos */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
@@ -219,10 +255,78 @@ export default function AnaliseEmpresaPage() {
           </section>
 
           <Button onClick={handleSubmit} disabled={loading || !form.name || !form.industry} size="lg" className="w-full gradient-brand text-white">
-            {loading ? "Gerando análise..." : "🚀 Gerar Análise Estratégica Completa"}
+            {loading ? "🧠 Gerando análise com IA..." : "🚀 Gerar Análise Estratégica Completa"}
           </Button>
         </div>
+        )}
       </div>
     </AppShell>
+  )
+}
+
+function EmpresaResults({ reportId }: { reportId: string }) {
+  const [report, setReport] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("transformacao")
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      const res = await fetch(`/api/brand-report/${reportId}`)
+      if (res.ok) setReport(await res.json())
+      setLoading(false)
+    }
+    fetchReport()
+  }, [reportId])
+
+  if (loading) return <div className="text-center py-12"><p className="text-muted-foreground">Carregando resultados...</p></div>
+  if (!report) return <div className="text-center py-12"><p className="text-red-600">Relatório não encontrado.</p></div>
+
+  const tabs = [
+    { key: "transformacao", label: "🔄 Transformação", data: report.brandArchetype },
+    { key: "oferta", label: "💰 Oferta", data: report.brandPositioning },
+    { key: "voz", label: "🗣️ Voz", data: report.brandVoice },
+    { key: "visual", label: "🎨 Visual", data: report.visualIdentity },
+    { key: "plano", label: "📋 Plano", data: report.brandEcosystem },
+  ]
+
+  return (
+    <div>
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {tabs.map((tab) => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.key ? "bg-emerald-600 text-white shadow-md" : "bg-card border hover:bg-accent text-muted-foreground"}`}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="bg-card rounded-xl border p-6">
+        {tabs.find(t => t.key === activeTab)?.data ? (
+          <RenderData data={tabs.find(t => t.key === activeTab)!.data} />
+        ) : (
+          <p className="text-muted-foreground text-center py-8">Seção não disponível.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function RenderData({ data }: { data: any }) {
+  if (!data || typeof data !== "object") return <p>-</p>
+  return (
+    <div className="space-y-4">
+      {Object.entries(data).map(([key, value]) => (
+        <div key={key} className="border-b pb-3 last:border-0">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">{key.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}</h3>
+          {typeof value === "string" ? <p className="text-sm">{value}</p> :
+           Array.isArray(value) ? (
+            value.length === 0 ? <span className="text-muted-foreground text-sm">-</span> :
+            typeof value[0] === "string" ? <div className="flex flex-wrap gap-2">{value.map((v, i) => <span key={i} className="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs">{v}</span>)}</div> :
+            <div className="space-y-2">{value.map((item, i) => <div key={i} className="bg-accent/50 rounded p-2 text-sm">{typeof item === "object" ? Object.entries(item).map(([k, v]) => <div key={k}><span className="font-medium text-muted-foreground text-xs">{k}:</span> {String(v)}</div>) : String(item)}</div>)}</div>
+           ) : typeof value === "object" ? (
+            <div className="bg-accent/30 rounded p-3 space-y-1 text-sm">{Object.entries(value as object).map(([k, v]) => <div key={k}><span className="font-medium text-muted-foreground text-xs">{k}:</span> {typeof v === "string" ? v : JSON.stringify(v)}</div>)}</div>
+           ) : <p className="text-sm">{String(value)}</p>}
+        </div>
+      ))}
+    </div>
   )
 }
