@@ -1,9 +1,19 @@
 import OpenAI from "openai"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "ollama",
-  baseURL: process.env.OPENAI_BASE_URL || "http://localhost:11434/v1",
-})
+// In production (Vercel): use OpenAI API directly
+// In development: use Ollama or OpenAI
+const isProduction = process.env.NODE_ENV === "production"
+const apiKey = isProduction
+  ? (process.env.OPENAI_IMAGE_KEY || process.env.OPENAI_API_KEY || "")
+  : (process.env.OPENAI_API_KEY || "ollama")
+const baseURL = isProduction
+  ? "https://api.openai.com/v1"
+  : (process.env.OPENAI_BASE_URL || "http://localhost:11434/v1")
+const defaultModel = isProduction
+  ? "gpt-4o-mini"
+  : (process.env.OPENAI_MODEL || "llama3.2")
+
+const openai = new OpenAI({ apiKey, baseURL })
 
 export async function generateCompletion(
   systemPrompt: string,
@@ -15,7 +25,7 @@ export async function generateCompletion(
   }
 ): Promise<string> {
   const response = await openai.chat.completions.create({
-    model: options?.model || process.env.OPENAI_MODEL || "llama3.2",
+    model: options?.model || defaultModel,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
@@ -37,7 +47,7 @@ export async function generateJSON<T>(
   }
 ): Promise<T> {
   const response = await openai.chat.completions.create({
-    model: options?.model || process.env.OPENAI_MODEL || "llama3.2",
+    model: options?.model || defaultModel,
     messages: [
       { role: "system", content: systemPrompt + "\n\nRespond ONLY with valid JSON. No markdown, no code blocks, no extra text. Be concise." },
       { role: "user", content: userPrompt },
@@ -52,14 +62,11 @@ export async function generateJSON<T>(
   try {
     return JSON.parse(content) as T
   } catch {
-    // Try to extract JSON from response
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (jsonMatch) {
       try {
         return JSON.parse(jsonMatch[0]) as T
-      } catch {
-        // fall through
-      }
+      } catch {}
     }
     console.error("Failed to parse JSON response:", content.slice(0, 200))
     return {} as T
