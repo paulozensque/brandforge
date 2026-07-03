@@ -22,6 +22,7 @@ export default function CampanhasPage() {
   const [campaignLoading, setCampaignLoading] = useState(false)
   const [campaignResult, setCampaignResult] = useState<any>(null)
   const [showOptimization, setShowOptimization] = useState(false)
+  const [showGuide, setShowGuide] = useState<string | null>(null)
   const [campaignForm, setCampaignForm] = useState({
     objective: "leads",
     budget: "",
@@ -97,28 +98,156 @@ export default function CampanhasPage() {
           <div className="space-y-6">
             {/* Conexão com plataformas */}
             <div className="bg-card rounded-xl border p-6">
-              <h2 className="text-lg font-semibold mb-4">🔌 Plataformas Conectadas</h2>
+              <h2 className="text-lg font-semibold mb-4">🔌 Plataformas de Anúncios</h2>
               <div className="grid grid-cols-3 gap-4">
                 {(Object.entries(platforms) as [Platform, typeof platformStatus.meta][]).map(([key, platform]) => (
                   <div key={key} className={`rounded-xl border-2 p-4 text-center ${platform.connected ? "border-emerald-300 bg-emerald-50" : "border-gray-200"}`}>
                     <span className="text-3xl block mb-2">{platform.icon}</span>
                     <h3 className="font-semibold text-sm">{platform.label}</h3>
                     {platform.connected ? (
-                      <div className="mt-2">
-                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">✅ Conectado</span>
+                      <div className="mt-2 space-y-2">
+                        <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full block">✅ Configurado</span>
+                        <a href={key === "meta" ? "https://business.facebook.com/billing_hub" : key === "google" ? "https://ads.google.com/aw/billing" : "https://ads.tiktok.com/i18n/account/payment"}
+                          target="_blank" className="text-xs text-blue-600 hover:underline block">💳 Billing</a>
                       </div>
                     ) : (
-                      <Button size="sm" variant="outline" className="mt-2" onClick={() => connectPlatform(key)}>
-                        Conectar
-                      </Button>
+                      <div className="mt-2 space-y-2">
+                        <Button size="sm" variant="outline" onClick={() => connectPlatform(key)}>Já tenho conta</Button>
+                        <button onClick={() => setShowGuide(key)} className="text-xs text-blue-600 hover:underline block w-full">📖 Criar conta do zero</button>
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                💡 Na versão completa: OAuth com cada plataforma para gerenciar campanhas diretamente.
-              </p>
+
+              {/* Links rápidos */}
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <a href="https://business.facebook.com/billing_hub" target="_blank" className="text-center p-2 bg-blue-50 rounded-lg text-xs hover:bg-blue-100">💳 Billing Meta</a>
+                <a href="https://ads.google.com/aw/billing" target="_blank" className="text-center p-2 bg-red-50 rounded-lg text-xs hover:bg-red-100">💳 Billing Google</a>
+                <a href="https://ads.tiktok.com/i18n/account/payment" target="_blank" className="text-center p-2 bg-purple-50 rounded-lg text-xs hover:bg-purple-100">💳 Billing TikTok</a>
+              </div>
             </div>
+
+            {/* Guide Modal */}
+            {showGuide && (
+              <div className="bg-card rounded-xl border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">📖 Como criar conta — {showGuide === "meta" ? "Meta Ads" : showGuide === "google" ? "Google Ads" : "TikTok Ads"}</h2>
+                  <Button size="sm" variant="outline" onClick={() => setShowGuide(null)}>✕ Fechar</Button>
+                </div>
+
+                {showGuide === "meta" && (
+                  <div className="space-y-4 text-sm">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 1: Criar Business Manager</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://business.facebook.com/overview" target="_blank" className="text-blue-600 underline">business.facebook.com</a></li>
+                        <li>Clique em "Criar Conta"</li>
+                        <li>Preencha: nome do negócio, seu nome, email</li>
+                        <li>Confirme o email</li>
+                      </ol>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 2: Criar Conta de Anúncios</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>No Business Manager → Configurações → Contas → Contas de anúncios</li>
+                        <li>Clique "Adicionar" → "Criar nova conta de anúncios"</li>
+                        <li>Defina: nome, fuso horário (BRT), moeda (BRL)</li>
+                        <li>Atribua permissões</li>
+                      </ol>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 3: Adicionar Pagamento</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://business.facebook.com/billing_hub" target="_blank" className="text-blue-600 underline">Billing Hub</a></li>
+                        <li>Adicione cartão de crédito ou boleto</li>
+                        <li>Defina limite de gastos (recomendado: R$ 50-100/dia para começar)</li>
+                      </ol>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 4: Instalar Pixel</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Gerenciador de Eventos → Conectar fonte de dados → Web</li>
+                        <li>Copie o código do Pixel</li>
+                        <li>Cole no seu site (entre as tags head)</li>
+                      </ol>
+                    </div>
+                    <a href="https://www.facebook.com/business/help" target="_blank" className="text-blue-600 text-xs hover:underline block">📚 Central de Ajuda Meta</a>
+                  </div>
+                )}
+
+                {showGuide === "google" && (
+                  <div className="space-y-4 text-sm">
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 1: Criar conta Google Ads</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://ads.google.com/intl/pt-BR_br/start/" target="_blank" className="text-blue-600 underline">ads.google.com</a></li>
+                        <li>Faça login com sua conta Google</li>
+                        <li>Pule o assistente (clique "Alternar para modo especialista")</li>
+                        <li>Crie uma campanha ou "Criar conta sem campanha"</li>
+                      </ol>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 2: Configurar Faturamento</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://ads.google.com/aw/billing" target="_blank" className="text-blue-600 underline">Faturamento</a></li>
+                        <li>País: Brasil, Moeda: BRL</li>
+                        <li>Adicione cartão de crédito</li>
+                        <li>Defina orçamento inicial</li>
+                      </ol>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 3: Instalar Tag de Conversão</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Ferramentas → Conversões → Nova ação de conversão</li>
+                        <li>Selecione "Website"</li>
+                        <li>Instale a tag global + evento de conversão</li>
+                      </ol>
+                    </div>
+                    <a href="https://support.google.com/google-ads" target="_blank" className="text-blue-600 text-xs hover:underline block">📚 Suporte Google Ads</a>
+                  </div>
+                )}
+
+                {showGuide === "tiktok" && (
+                  <div className="space-y-4 text-sm">
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 1: Criar conta TikTok Business</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://ads.tiktok.com/i18n/signup" target="_blank" className="text-blue-600 underline">ads.tiktok.com</a></li>
+                        <li>Registre com email ou telefone</li>
+                        <li>Preencha: país, setor, nome da empresa</li>
+                        <li>Aguarde aprovação (geralmente imediata)</li>
+                      </ol>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 2: Criar Business Center</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://business.tiktok.com" target="_blank" className="text-blue-600 underline">business.tiktok.com</a></li>
+                        <li>Crie um Business Center</li>
+                        <li>Adicione conta de anúncios</li>
+                      </ol>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 3: Adicionar Pagamento</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Acesse <a href="https://ads.tiktok.com/i18n/account/payment" target="_blank" className="text-blue-600 underline">Pagamentos</a></li>
+                        <li>Método: Cartão de crédito (Visa/Mastercard)</li>
+                        <li>Adicione saldo (mínimo ~R$ 50)</li>
+                      </ol>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <h3 className="font-bold mb-2">Passo 4: Instalar Pixel</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Assets → Eventos → Gerenciar (Web Events)</li>
+                        <li>Crie um Pixel</li>
+                        <li>Instale manualmente ou via GTM</li>
+                      </ol>
+                    </div>
+                    <a href="https://ads.tiktok.com/help/" target="_blank" className="text-blue-600 text-xs hover:underline block">📚 Central de Ajuda TikTok Ads</a>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Dashboard de campanhas */}
             <div className="bg-card rounded-xl border p-6">
