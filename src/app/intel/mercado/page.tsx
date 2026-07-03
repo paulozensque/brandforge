@@ -89,78 +89,160 @@ export default function AnaliseMercadoPage() {
         {!showForm && reportId && <MercadoResults reportId={reportId} />}
 
         {showForm && (
-        <div className="space-y-8">
+        <div className="space-y-6">
+          {/* Seção 1: Sobre você */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">📊 Mercado & Nicho</h2>
+            <h2 className="text-lg font-semibold">1️⃣ Sobre sua empresa</h2>
+            <p className="text-xs text-muted-foreground">Informações básicas para contextualizar a análise.</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Sua empresa *</label>
-                <Input value={form.companyName} onChange={(e) => update("companyName", e.target.value)} placeholder="Nome da empresa" />
+                <label className="text-sm font-medium">Nome da empresa *</label>
+                <Input value={form.companyName} onChange={(e) => update("companyName", e.target.value)} placeholder="Ex: Zen Power" className="mt-1" />
               </div>
               <div>
-                <label className="text-sm font-medium">Indústria *</label>
-                <Input value={form.industry} onChange={(e) => update("industry", e.target.value)} placeholder="Ex: Marketing Digital" />
+                <label className="text-sm font-medium">Setor de atuação *</label>
+                <select value={form.industry} onChange={(e) => update("industry", e.target.value)} className="w-full h-10 rounded-md border px-3 text-sm mt-1">
+                  <option value="">Selecione...</option>
+                  <option value="Marketing Digital">Marketing Digital</option>
+                  <option value="E-commerce">E-commerce</option>
+                  <option value="SaaS / Tecnologia">SaaS / Tecnologia</option>
+                  <option value="Educação / Infoprodutos">Educação / Infoprodutos</option>
+                  <option value="Saúde / Estética">Saúde / Estética</option>
+                  <option value="Consultoria / Serviços">Consultoria / Serviços</option>
+                  <option value="Varejo / Produtos Físicos">Varejo / Produtos Físicos</option>
+                  <option value="Imobiliário">Imobiliário</option>
+                  <option value="Alimentação / Restaurantes">Alimentação / Restaurantes</option>
+                  <option value="Finanças / Investimentos">Finanças / Investimentos</option>
+                  <option value="Outro">Outro</option>
+                </select>
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Nicho específico *</label>
-              <Input value={form.niche} onChange={(e) => update("niche", e.target.value)} placeholder="Ex: Agências de tráfego pago para e-commerce" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Tamanho estimado do mercado</label>
-              <Input value={form.marketSize} onChange={(e) => update("marketSize", e.target.value)} placeholder="Ex: R$ 5 bilhões/ano no Brasil" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Tendências atuais</label>
-              <Textarea value={form.currentTrends} onChange={(e) => update("currentTrends", e.target.value)} placeholder="O que está em alta no seu mercado?" />
+              <label className="text-sm font-medium">Qual é o seu nicho específico? *</label>
+              <p className="text-xs text-muted-foreground">Seja o mais específico possível. Ex: "Agências de tráfego pago que atendem clínicas de estética em SP"</p>
+              <Input value={form.niche} onChange={(e) => update("niche", e.target.value)} placeholder="Descreva seu nicho com detalhes..." className="mt-1" />
             </div>
           </section>
 
+          {/* Seção 2: Mercado */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">⚔️ Concorrentes</h2>
+            <h2 className="text-lg font-semibold">2️⃣ Sobre o mercado</h2>
+            <p className="text-xs text-muted-foreground">Não precisa ser exato — uma estimativa já ajuda a IA gerar insights melhores.</p>
             <div>
-              <label className="text-sm font-medium">Principais concorrentes</label>
-              <TagInput value={form.competitors} onChange={(v) => update("competitors", v)} placeholder="Nome dos concorrentes diretos e indiretos" />
+              <label className="text-sm font-medium">Qual o tamanho estimado desse mercado?</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                {["Até R$ 1 milhão/ano", "R$ 1-10 milhões", "R$ 10-100 milhões", "R$ 100 milhões+", "Não sei estimar"].map(opt => (
+                  <button key={opt} onClick={() => update("marketSize", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.marketSize === opt ? "border-blue-500 bg-blue-50 font-medium" : "hover:border-gray-400"}`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Faixa de preço do mercado</label>
-              <Input value={form.priceRange} onChange={(e) => update("priceRange", e.target.value)} placeholder="Ex: R$ 1.000 a R$ 20.000" />
+              <label className="text-sm font-medium">O mercado está em qual momento?</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                {[
+                  { value: "Crescendo rápido", icon: "🚀" },
+                  { value: "Crescendo devagar", icon: "📈" },
+                  { value: "Estável/Maduro", icon: "⚖️" },
+                  { value: "Saturado/Difícil", icon: "😰" },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => update("currentTrends", opt.value)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.currentTrends === opt.value ? "border-blue-500 bg-blue-50 font-medium" : "hover:border-gray-400"}`}>
+                    {opt.icon} {opt.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Faixa de preço praticada no mercado</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                {["Até R$ 500", "R$ 500 - R$ 2.000", "R$ 2.000 - R$ 10.000", "R$ 10.000+", "Varia muito"].map(opt => (
+                  <button key={opt} onClick={() => update("priceRange", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.priceRange === opt ? "border-blue-500 bg-blue-50 font-medium" : "hover:border-gray-400"}`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
 
+          {/* Seção 3: Concorrentes */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">👥 Público & Canais</h2>
+            <h2 className="text-lg font-semibold">3️⃣ Concorrentes</h2>
+            <p className="text-xs text-muted-foreground">Liste quem compete com você (direto ou indireto). Se não souber, tudo bem — a IA busca por você.</p>
             <div>
-              <label className="text-sm font-medium">Perfil do público no mercado</label>
-              <Textarea value={form.audienceProfile} onChange={(e) => update("audienceProfile", e.target.value)} placeholder="Quem compra neste mercado? (demografia, comportamento)" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Dores do mercado</label>
-              <TagInput value={form.audiencePains} onChange={(v) => update("audiencePains", v)} placeholder="Problemas que o mercado não resolve bem" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Comportamento de compra</label>
-              <Textarea value={form.audienceBehavior} onChange={(e) => update("audienceBehavior", e.target.value)} placeholder="Como o público pesquisa e decide comprar?" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Canais principais</label>
-              <TagInput value={form.channels} onChange={(v) => update("channels", v)} placeholder="Ex: Instagram, Google, YouTube, TikTok..." />
+              <label className="text-sm font-medium">Nomes de concorrentes (adicione e pressione Enter)</label>
+              <TagInput value={form.competitors} onChange={(v) => update("competitors", v)} placeholder="Ex: Empresa X, Empresa Y..." />
             </div>
           </section>
 
+          {/* Seção 4: Público */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">🔮 Ameaças & Oportunidades</h2>
+            <h2 className="text-lg font-semibold">4️⃣ Quem é seu público?</h2>
+            <p className="text-xs text-muted-foreground">Descreva quem compra no seu mercado.</p>
             <div>
-              <label className="text-sm font-medium">Ameaças ao mercado</label>
-              <Textarea value={form.threats} onChange={(e) => update("threats", e.target.value)} placeholder="O que pode prejudicar o mercado? (regulação, IA, concorrência...)" />
+              <label className="text-sm font-medium">Tipo de cliente</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {[
+                  { value: "Empresas pequenas (B2B)", icon: "🏢" },
+                  { value: "Empresas médias/grandes (B2B)", icon: "🏛️" },
+                  { value: "Consumidor final (B2C)", icon: "👤" },
+                  { value: "Profissionais liberais", icon: "💼" },
+                  { value: "E-commerces", icon: "🛒" },
+                  { value: "Misto (B2B + B2C)", icon: "🔄" },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => update("audienceProfile", opt.value)}
+                    className={`px-3 py-2 rounded-lg border text-xs text-left transition-all ${form.audienceProfile === opt.value ? "border-blue-500 bg-blue-50 font-medium" : "hover:border-gray-400"}`}>
+                    {opt.icon} {opt.value}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Oportunidades</label>
-              <Textarea value={form.opportunities} onChange={(e) => update("opportunities", e.target.value)} placeholder="Gaps e oportunidades que você enxerga" />
+              <label className="text-sm font-medium">Principais dores do seu público (adicione e pressione Enter)</label>
+              <TagInput value={form.audiencePains} onChange={(v) => update("audiencePains", v)} placeholder="Ex: Não conseguem vender online, Falta de leads..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Onde seu público está? (selecione todos que se aplicam)</label>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-2">
+                {["Instagram", "Google", "YouTube", "TikTok", "LinkedIn", "WhatsApp", "Facebook", "Email", "Eventos", "Indicação"].map(opt => (
+                  <button key={opt} onClick={() => {
+                    const current = form.channels || []
+                    const updated = current.includes(opt) ? current.filter((c: string) => c !== opt) : [...current, opt]
+                    update("channels", updated)
+                  }}
+                    className={`px-2 py-2 rounded-lg border text-xs transition-all ${(form.channels || []).includes(opt) ? "border-blue-500 bg-blue-50 font-medium" : "hover:border-gray-400"}`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
 
-          <Button onClick={handleSubmit} disabled={loading || !form.companyName || !form.industry || !form.niche} size="lg" className="w-full gradient-brand text-white">
+          {/* Seção 5: Visão */}
+          <section className="bg-card rounded-xl border p-6 space-y-4">
+            <h2 className="text-lg font-semibold">5️⃣ Sua visão do mercado</h2>
+            <p className="text-xs text-muted-foreground">Opcional — qualquer informação extra ajuda a IA.</p>
+            <div>
+              <label className="text-sm font-medium">O que ameaça esse mercado?</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {["IA substituindo", "Muita concorrência", "Preço caindo", "Regulação/Leis", "Mudança de comportamento", "Nenhuma grande"].map(opt => (
+                  <button key={opt} onClick={() => update("threats", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.threats === opt ? "border-red-500 bg-red-50 font-medium" : "hover:border-gray-400"}`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Oportunidades que você enxerga</label>
+              <Textarea value={form.opportunities} onChange={(e) => update("opportunities", e.target.value)} placeholder="Ex: Poucos players atendem bem o nicho X, mercado está migrando para Y..." rows={2} className="mt-1" />
+            </div>
+          </section>
+
+          <Button onClick={handleSubmit} disabled={loading || !form.companyName || !form.industry || !form.niche} size="lg" className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
             {loading ? "🧠 Analisando mercado com IA..." : "📊 Gerar Análise de Mercado Completa"}
           </Button>
         </div>
