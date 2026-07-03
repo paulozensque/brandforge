@@ -159,7 +159,13 @@ export default function WhatsAppPage() {
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleConnect} disabled={loading}>
                 {loading ? "Gerando QR Code..." : "Conectar WhatsApp"}
               </Button>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-left mt-3">
+                  <p className="text-sm text-amber-800 font-medium mb-1">⚠️ Conexão não disponível</p>
+                  <p className="text-xs text-amber-700">{error}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Para usar o WhatsApp online, hospede a Evolution API em Railway.app ou Render.com e configure a URL nas variáveis de ambiente.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
