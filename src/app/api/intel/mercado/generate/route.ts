@@ -61,8 +61,9 @@ OPORTUNIDADES: ${body.opportunities || "N/A"}
         key: "marketOverview",
         system: `Você é um analista de mercado sênior. Analise o mercado e responda em JSON:
 {
-  "tamanhoMercado": { "estimativa": "", "crescimentoAnual": "", "tendencia": "" },
-  "segmentacao": [{ "segmento": "", "tamanho": "", "oportunidade": "" }],
+  "tamanhoMercado": { "tam": "Total Addressable Market em R$", "sam": "Serviceable Addressable Market em R$", "som": "Serviceable Obtainable Market em R$", "explicacao_tam": "", "explicacao_sam": "", "explicacao_som": "" },
+  "crescimentoAnual": "",
+  "tendencias": ["tendência 1", "tendência 2", "tendência 3"],
   "cicloDeVida": "",
   "barreirasEntrada": [],
   "fatoresChave": [],
@@ -71,10 +72,24 @@ OPORTUNIDADES: ${body.opportunities || "N/A"}
         user: `Análise de mercado:\n${context}`,
       },
       {
+        key: "swot",
+        system: `Você é um consultor estratégico. Faça uma análise SWOT completa. Responda em JSON:
+{
+  "forcas": [{"item": "", "impacto": "alto/medio/baixo"}],
+  "fraquezas": [{"item": "", "impacto": "alto/medio/baixo"}],
+  "oportunidades": [{"item": "", "impacto": "alto/medio/baixo"}],
+  "ameacas": [{"item": "", "impacto": "alto/medio/baixo"}],
+  "estrategias_fo": ["usar força X para aproveitar oportunidade Y"],
+  "estrategias_wt": ["mitigar fraqueza X contra ameaça Y"]
+}
+Gere pelo menos 4 itens em cada quadrante.`,
+        user: `Análise SWOT para:\n${context}`,
+      },
+      {
         key: "competitorAnalysis",
         system: `Você é um especialista em inteligência competitiva. Analise os concorrentes e responda em JSON:
 {
-  "mapaCompetitivo": [{ "nome": "", "forca": "", "fraqueza": "", "posicionamento": "", "precoEstimado": "" }],
+  "mapaCompetitivo": [{ "nome": "", "forca": "", "fraqueza": "", "posicionamento": "", "precoEstimado": "", "nivel_ameaca": 1-10 }],
   "lacunasDoMercado": [],
   "estrategiaOceanoAzul": { "eliminar": [], "reduzir": [], "elevar": [], "criar": [] },
   "vantagensCompetitivas": [],
@@ -83,28 +98,29 @@ OPORTUNIDADES: ${body.opportunities || "N/A"}
         user: `Análise competitiva:\n${context}`,
       },
       {
-        key: "audienceInsights",
-        system: `Você é especialista em comportamento do consumidor. Analise o público e responda em JSON:
+        key: "porter",
+        system: `Você é um estrategista usando o modelo das 5 Forças de Porter. Responda em JSON:
 {
-  "personaIdeal": { "nome": "", "idade": "", "cargo": "", "dor_principal": "", "desejo_principal": "", "objecoes": [] },
-  "jornadaDeCompra": [{ "etapa": "", "comportamento": "", "canaisUsados": [], "gatilho": "" }],
-  "triggers_de_compra": [],
-  "objecoes_comuns": [{ "objecao": "", "resposta": "" }],
-  "onde_encontrar": [],
-  "mensagens_que_convertem": []
+  "rivalidade_entre_concorrentes": { "intensidade": 1-10, "fatores": [], "estrategia": "" },
+  "poder_fornecedores": { "intensidade": 1-10, "fatores": [], "estrategia": "" },
+  "poder_compradores": { "intensidade": 1-10, "fatores": [], "estrategia": "" },
+  "ameaca_substitutos": { "intensidade": 1-10, "fatores": [], "estrategia": "" },
+  "ameaca_novos_entrantes": { "intensidade": 1-10, "fatores": [], "estrategia": "" },
+  "atratividade_geral": 1-10,
+  "recomendacao": ""
 }`,
-        user: `Análise de público:\n${context}`,
+        user: `5 Forças de Porter para:\n${context}`,
       },
       {
         key: "opportunities",
         system: `Você é um consultor de growth strategy inspirado em Sabri Suby (King Kong). Responda em JSON:
 {
-  "oportunidadesImediatas": [{ "oportunidade": "", "impacto": "", "esforco": "", "prioridade": "" }],
+  "oportunidadesImediatas": [{ "oportunidade": "", "impacto": "alto/medio/baixo", "esforco": "alto/medio/baixo", "prioridade": 1-5 }],
   "estrategia_de_entrada": "",
   "diferenciacao_recomendada": "",
   "precificacao_estrategica": { "modelo": "", "justificativa": "", "ancora": "" },
   "canais_recomendados": [{ "canal": "", "porque": "", "investimento": "", "roi_esperado": "" }],
-  "projecao_resultados": { "mes1": "", "mes3": "", "mes6": "" }
+  "projecao_resultados": { "mes1": "", "mes3": "", "mes6": "", "mes12": "" }
 }`,
         user: `Oportunidades e estratégia:\n${context}`,
       },

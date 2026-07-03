@@ -179,14 +179,15 @@ function MercadoResults({ reportId }: { reportId: string }) {
     fetch(`/api/intel/mercado/${reportId}`).then(r => r.json()).then(setReport).finally(() => setLoading(false))
   }, [reportId])
 
-  if (loading) return <div className="text-center py-12"><p>Carregando...</p></div>
+  if (loading) return <div className="text-center py-12"><div className="w-12 h-12 rounded-full bg-blue-100 animate-pulse mx-auto mb-3" /><p className="text-muted-foreground">Gerando análise com IA...</p></div>
   if (!report) return <div className="text-center py-12"><p className="text-red-600">Não encontrado</p></div>
 
   const data = report.data || {}
   const tabs = [
-    { key: "marketOverview", label: "📊 Visão Geral" },
+    { key: "marketOverview", label: "📊 TAM/SAM/SOM" },
+    { key: "swot", label: "🎯 SWOT" },
     { key: "competitorAnalysis", label: "⚔️ Concorrentes" },
-    { key: "audienceInsights", label: "👥 Público" },
+    { key: "porter", label: "🏗️ 5 Forças" },
     { key: "opportunities", label: "🚀 Oportunidades" },
   ]
 
@@ -200,21 +201,162 @@ function MercadoResults({ reportId }: { reportId: string }) {
           </button>
         ))}
       </div>
-      <div className="bg-card rounded-xl border p-6">
-        {data[activeTab] ? (
-          <div className="space-y-4">
-            {Object.entries(data[activeTab]).map(([k, v]) => (
-              <div key={k} className="border-b pb-3 last:border-0">
-                <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-1">{k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}</h3>
-                {typeof v === "string" ? <p className="text-sm">{v}</p> :
-                 Array.isArray(v) ? <div className="space-y-1">{(v as any[]).map((item, i) => <div key={i} className="bg-accent/50 rounded p-2 text-sm">{typeof item === "object" ? Object.entries(item).map(([ik,iv]) => <span key={ik} className="mr-2"><strong>{ik}:</strong> {String(iv)}</span>) : String(item)}</div>)}</div> :
-                 typeof v === "object" ? <div className="bg-accent/30 rounded p-3 text-sm">{Object.entries(v as object).map(([ik,iv]) => <div key={ik}><strong>{ik}:</strong> {String(iv)}</div>)}</div> :
-                 <p className="text-sm">{String(v)}</p>}
+
+      {/* TAM/SAM/SOM Visual */}
+      {activeTab === "marketOverview" && data.marketOverview && (
+        <div className="space-y-6">
+          <div className="bg-card rounded-xl border p-6">
+            <h3 className="font-semibold text-lg mb-4">📊 Tamanho do Mercado (TAM / SAM / SOM)</h3>
+            <div className="flex items-center justify-center gap-4 py-6">
+              <div className="relative">
+                <div className="w-48 h-48 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="w-36 h-36 rounded-full bg-blue-200 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-xs text-center">SOM<br/>{data.marketOverview.tamanhoMercado?.som || "?"}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute top-2 right-0 text-xs text-blue-600 font-medium">TAM: {data.marketOverview.tamanhoMercado?.tam || "?"}</div>
+                <div className="absolute top-14 -right-4 text-xs text-blue-500 font-medium">SAM: {data.marketOverview.tamanhoMercado?.sam || "?"}</div>
               </div>
-            ))}
+              <div className="space-y-2 text-sm max-w-xs">
+                <div><span className="inline-block w-3 h-3 rounded-full bg-blue-100 mr-2" /><strong>TAM:</strong> {data.marketOverview.tamanhoMercado?.explicacao_tam || "Mercado total"}</div>
+                <div><span className="inline-block w-3 h-3 rounded-full bg-blue-200 mr-2" /><strong>SAM:</strong> {data.marketOverview.tamanhoMercado?.explicacao_sam || "Mercado endereçável"}</div>
+                <div><span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2" /><strong>SOM:</strong> {data.marketOverview.tamanhoMercado?.explicacao_som || "Mercado obtível"}</div>
+              </div>
+            </div>
           </div>
-        ) : <p className="text-muted-foreground text-center py-8">Seção em processamento...</p>}
-      </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-card rounded-xl border p-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Crescimento Anual</h4>
+              <p className="text-2xl font-bold text-emerald-600">{data.marketOverview.crescimentoAnual || "N/A"}</p>
+            </div>
+            <div className="bg-card rounded-xl border p-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Ciclo de Vida</h4>
+              <p className="text-2xl font-bold text-blue-600">{data.marketOverview.cicloDeVida || "N/A"}</p>
+            </div>
+          </div>
+          {data.marketOverview.tendencias && (
+            <div className="bg-card rounded-xl border p-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">🔥 Tendências</h4>
+              <div className="flex flex-wrap gap-2">{data.marketOverview.tendencias.map((t: string, i: number) => <span key={i} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm">{t}</span>)}</div>
+            </div>
+          )}
+          <RenderSection data={{ barreirasEntrada: data.marketOverview.barreirasEntrada, fatoresChave: data.marketOverview.fatoresChave, perspectiva5Anos: data.marketOverview.perspectiva5Anos }} />
+        </div>
+      )}
+
+      {/* SWOT Visual */}
+      {activeTab === "swot" && data.swot && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+              <h3 className="font-bold text-emerald-800 mb-3">💪 Forças</h3>
+              <div className="space-y-2">{(data.swot.forcas || []).map((f: any, i: number) => (
+                <div key={i} className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${f.impacto === "alto" ? "bg-emerald-600" : "bg-emerald-300"}`} /><span className="text-sm">{f.item || f}</span></div>
+              ))}</div>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+              <h3 className="font-bold text-red-800 mb-3">⚠️ Fraquezas</h3>
+              <div className="space-y-2">{(data.swot.fraquezas || []).map((f: any, i: number) => (
+                <div key={i} className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${f.impacto === "alto" ? "bg-red-600" : "bg-red-300"}`} /><span className="text-sm">{f.item || f}</span></div>
+              ))}</div>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+              <h3 className="font-bold text-blue-800 mb-3">🚀 Oportunidades</h3>
+              <div className="space-y-2">{(data.swot.oportunidades || []).map((f: any, i: number) => (
+                <div key={i} className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${f.impacto === "alto" ? "bg-blue-600" : "bg-blue-300"}`} /><span className="text-sm">{f.item || f}</span></div>
+              ))}</div>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+              <h3 className="font-bold text-amber-800 mb-3">⚡ Ameaças</h3>
+              <div className="space-y-2">{(data.swot.ameacas || []).map((f: any, i: number) => (
+                <div key={i} className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${f.impacto === "alto" ? "bg-amber-600" : "bg-amber-300"}`} /><span className="text-sm">{f.item || f}</span></div>
+              ))}</div>
+            </div>
+          </div>
+          {data.swot.estrategias_fo && (
+            <div className="bg-card rounded-xl border p-4">
+              <h4 className="text-sm font-medium mb-2">🎯 Estratégias (Forças × Oportunidades)</h4>
+              <div className="space-y-1">{data.swot.estrategias_fo.map((e: string, i: number) => <p key={i} className="text-sm">→ {e}</p>)}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Porter's 5 Forces Visual */}
+      {activeTab === "porter" && data.porter && (
+        <div className="space-y-6">
+          <div className="bg-card rounded-xl border p-6">
+            <h3 className="font-semibold text-lg mb-4">🏗️ 5 Forças de Porter</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {[
+                { key: "rivalidade_entre_concorrentes", label: "Rivalidade", icon: "⚔️", color: "red" },
+                { key: "poder_fornecedores", label: "Fornecedores", icon: "🏭", color: "amber" },
+                { key: "poder_compradores", label: "Compradores", icon: "👥", color: "blue" },
+                { key: "ameaca_substitutos", label: "Substitutos", icon: "🔄", color: "purple" },
+                { key: "ameaca_novos_entrantes", label: "Novos Entrantes", icon: "🚪", color: "orange" },
+              ].map(force => {
+                const forceData = data.porter[force.key]
+                const intensity = forceData?.intensidade || 5
+                return (
+                  <div key={force.key} className="text-center bg-accent/50 rounded-xl p-4">
+                    <span className="text-2xl block mb-1">{force.icon}</span>
+                    <p className="text-xs font-medium mb-2">{force.label}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-3 mb-1">
+                      <div className={`h-3 rounded-full ${intensity >= 7 ? "bg-red-500" : intensity >= 4 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${intensity * 10}%` }} />
+                    </div>
+                    <p className="text-lg font-bold">{intensity}/10</p>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground">Atratividade Geral do Mercado:</p>
+              <p className="text-3xl font-bold text-blue-600">{data.porter.atratividade_geral || "?"}/10</p>
+            </div>
+          </div>
+          {data.porter.recomendacao && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h4 className="font-medium text-sm text-blue-800 mb-1">💡 Recomendação</h4>
+              <p className="text-sm">{data.porter.recomendacao}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Competitors & Opportunities - generic render */}
+      {activeTab === "competitorAnalysis" && data.competitorAnalysis && (
+        <div className="bg-card rounded-xl border p-6">
+          <RenderSection data={data.competitorAnalysis} />
+        </div>
+      )}
+      {activeTab === "opportunities" && data.opportunities && (
+        <div className="bg-card rounded-xl border p-6">
+          <RenderSection data={data.opportunities} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RenderSection({ data }: { data: any }) {
+  if (!data || typeof data !== "object") return <p className="text-muted-foreground">-</p>
+  return (
+    <div className="space-y-4">
+      {Object.entries(data).map(([k, v]) => (
+        <div key={k} className="border-b pb-3 last:border-0">
+          <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-1">{k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}</h3>
+          {typeof v === "string" ? <p className="text-sm">{v}</p> :
+           Array.isArray(v) ? (
+            v.length === 0 ? <span className="text-sm text-muted-foreground">-</span> :
+            typeof v[0] === "string" ? <div className="flex flex-wrap gap-2">{v.map((item, i) => <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">{item}</span>)}</div> :
+            <div className="space-y-2">{v.map((item, i) => <div key={i} className="bg-accent/50 rounded p-2 text-sm">{typeof item === "object" ? Object.entries(item).map(([ik,iv]) => <span key={ik} className="mr-3"><strong>{ik}:</strong> {String(iv)}</span>) : String(item)}</div>)}</div>
+           ) : typeof v === "object" ? (
+            <div className="bg-accent/30 rounded p-3 text-sm space-y-1">{Object.entries(v as object).map(([ik,iv]) => <div key={ik}><strong>{ik}:</strong> {typeof iv === "string" ? iv : JSON.stringify(iv)}</div>)}</div>
+           ) : <p className="text-sm">{String(v)}</p>}
+        </div>
+      ))}
     </div>
   )
 }
