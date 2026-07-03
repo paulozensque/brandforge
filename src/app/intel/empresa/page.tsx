@@ -111,150 +111,224 @@ export default function AnaliseEmpresaPage() {
 
         {/* Show form */}
         {showForm && (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Seção 1: Dados básicos */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">🏢 Dados da Empresa</h2>
+            <h2 className="text-lg font-semibold">1️⃣ Sua Empresa</h2>
+            <p className="text-xs text-muted-foreground">Informações básicas para a IA entender seu negócio.</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Nome da empresa *</label>
-                <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ex: Minha Empresa" />
+                <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ex: Zen Power" className="mt-1" />
               </div>
               <div>
-                <label className="text-sm font-medium">Indústria *</label>
-                <Input value={form.industry} onChange={(e) => update("industry", e.target.value)} placeholder="Ex: Marketing Digital" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Segmento</label>
-                <Input value={form.segment} onChange={(e) => update("segment", e.target.value)} placeholder="Ex: SaaS B2B" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Website</label>
-                <Input value={form.website} onChange={(e) => update("website", e.target.value)} placeholder="https://..." />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Localização</label>
-                <Input value={form.location} onChange={(e) => update("location", e.target.value)} placeholder="Ex: São Paulo, BR" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Tamanho da equipe</label>
-                <Input value={form.teamSize} onChange={(e) => update("teamSize", e.target.value)} placeholder="Ex: 5-10 pessoas" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Faturamento mensal</label>
-                <Input value={form.revenue} onChange={(e) => update("revenue", e.target.value)} placeholder="Ex: R$ 50.000" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Anos no mercado</label>
-                <Input value={form.yearsInMarket} onChange={(e) => update("yearsInMarket", e.target.value)} placeholder="Ex: 3 anos" />
-              </div>
-            </div>
-          </section>
-
-          {/* Seção 2: Produtos */}
-          <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">📦 Produtos & Serviços</h2>
-            <div>
-              <label className="text-sm font-medium">Principais produtos/serviços</label>
-              <TagInput value={form.mainProducts} onChange={(v) => update("mainProducts", v)} placeholder="Digite e pressione Enter" />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium">Faixa de preço</label>
-                <Input value={form.priceRange} onChange={(e) => update("priceRange", e.target.value)} placeholder="Ex: R$ 500 - R$ 5.000" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Ticket médio</label>
-                <Input value={form.avgTicket} onChange={(e) => update("avgTicket", e.target.value)} placeholder="Ex: R$ 2.000" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Modelo de entrega</label>
-                <select value={form.deliveryModel} onChange={(e) => update("deliveryModel", e.target.value)} className="w-full h-10 rounded-md border px-3 text-sm">
-                  <option value="">Selecione</option>
-                  <option value="digital">Digital</option>
-                  <option value="fisico">Físico</option>
-                  <option value="hibrido">Híbrido</option>
-                  <option value="servico">Serviço/Consultoria</option>
+                <label className="text-sm font-medium">Setor *</label>
+                <select value={form.industry} onChange={(e) => update("industry", e.target.value)} className="w-full h-10 rounded-md border px-3 text-sm mt-1">
+                  <option value="">Selecione...</option>
+                  <option value="Marketing Digital">Marketing Digital</option>
+                  <option value="E-commerce">E-commerce</option>
+                  <option value="SaaS / Tecnologia">SaaS / Tecnologia</option>
+                  <option value="Educação / Infoprodutos">Educação / Infoprodutos</option>
+                  <option value="Saúde / Estética">Saúde / Estética</option>
+                  <option value="Consultoria / Serviços">Consultoria / Serviços</option>
+                  <option value="Varejo">Varejo</option>
+                  <option value="Imobiliário">Imobiliário</option>
+                  <option value="Alimentação">Alimentação</option>
+                  <option value="Finanças">Finanças</option>
+                  <option value="Outro">Outro</option>
                 </select>
               </div>
             </div>
+            <div>
+              <label className="text-sm font-medium">Tamanho da equipe</label>
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                {["Só eu", "2-5 pessoas", "6-15 pessoas", "16-50 pessoas", "50+"].map(opt => (
+                  <button key={opt} onClick={() => update("teamSize", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.teamSize === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Faturamento mensal</label>
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                {["Até R$ 10k", "R$ 10-50k", "R$ 50-200k", "R$ 200k-1M", "R$ 1M+"].map(opt => (
+                  <button key={opt} onClick={() => update("revenue", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.revenue === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Há quanto tempo existe?</label>
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                {["Menos de 1 ano", "1-3 anos", "3-5 anos", "5-10 anos", "10+ anos"].map(opt => (
+                  <button key={opt} onClick={() => update("yearsInMarket", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.yearsInMarket === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
           </section>
 
-          {/* Seção 3: Posicionamento atual */}
+          {/* Seção 2: O que vende */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">🎯 Posicionamento Atual</h2>
+            <h2 className="text-lg font-semibold">2️⃣ O que você vende?</h2>
+            <p className="text-xs text-muted-foreground">Liste seus produtos/serviços e como entrega.</p>
             <div>
-              <label className="text-sm font-medium">Como você se posiciona hoje?</label>
-              <Textarea value={form.currentPositioning} onChange={(e) => update("currentPositioning", e.target.value)} placeholder="Descreva como sua empresa se apresenta para o mercado hoje..." />
+              <label className="text-sm font-medium">Produtos ou serviços (adicione e pressione Enter)</label>
+              <TagInput value={form.mainProducts} onChange={(v) => update("mainProducts", v)} placeholder="Ex: Gestão de tráfego, Branding, Consultoria..." />
             </div>
             <div>
-              <label className="text-sm font-medium">Qual sua promessa atual ao cliente?</label>
-              <Textarea value={form.currentPromise} onChange={(e) => update("currentPromise", e.target.value)} placeholder="O que você promete entregar para o cliente?" />
+              <label className="text-sm font-medium">Modelo de entrega</label>
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {[
+                  { value: "digital", label: "💻 100% Digital", desc: "Online" },
+                  { value: "servico", label: "🤝 Serviço/Consultoria", desc: "Reuniões" },
+                  { value: "fisico", label: "📦 Produto Físico", desc: "Entrega" },
+                  { value: "hibrido", label: "🔄 Híbrido", desc: "Mix" },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => update("deliveryModel", opt.value)}
+                    className={`px-3 py-3 rounded-lg border text-xs text-center transition-all ${form.deliveryModel === opt.value ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>
+                    <span className="block text-lg mb-1">{opt.label.split(" ")[0]}</span>{opt.label.split(" ").slice(1).join(" ")}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Diferenciais atuais</label>
-              <TagInput value={form.currentDifferentials} onChange={(v) => update("currentDifferentials", v)} placeholder="O que te diferencia da concorrência?" />
+              <label className="text-sm font-medium">Ticket médio (valor por cliente)</label>
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                {["Até R$ 500", "R$ 500-2k", "R$ 2k-5k", "R$ 5k-20k", "R$ 20k+"].map(opt => (
+                  <button key={opt} onClick={() => update("avgTicket", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.avgTicket === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Seção 3: Como se posiciona */}
+          <section className="bg-card rounded-xl border p-6 space-y-4">
+            <h2 className="text-lg font-semibold">3️⃣ Como você se posiciona hoje?</h2>
+            <p className="text-xs text-muted-foreground">Como o mercado te enxerga atualmente.</p>
+            <div>
+              <label className="text-sm font-medium">Sua empresa é vista como...</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {[
+                  "A mais barata do mercado", "Bom custo-benefício", "Premium/Cara",
+                  "Especialista no nicho", "Generalista", "Ainda não tenho posicionamento claro"
+                ].map(opt => (
+                  <button key={opt} onClick={() => update("currentPositioning", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs text-left transition-all ${form.currentPositioning === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Problemas atuais</label>
-              <Textarea value={form.currentProblems} onChange={(e) => update("currentProblems", e.target.value)} placeholder="Quais problemas de branding/vendas/posicionamento você enfrenta hoje?" />
+              <label className="text-sm font-medium">O que te diferencia? (adicione e pressione Enter)</label>
+              <TagInput value={form.currentDifferentials} onChange={(v) => update("currentDifferentials", v)} placeholder="Ex: Atendimento personalizado, Resultado garantido..." />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Maiores problemas hoje</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {[
+                  "Poucos clientes/leads", "Preço muito baixo", "Marca fraca/desconhecida",
+                  "Não sei me diferenciar", "Dependo de indicação", "Alta concorrência",
+                  "Não consigo escalar", "Cliente não percebe valor", "Outro"
+                ].map(opt => (
+                  <button key={opt} onClick={() => update("currentProblems", form.currentProblems === opt ? "" : opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs text-left transition-all ${form.currentProblems === opt ? "border-red-500 bg-red-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
             </div>
           </section>
 
           {/* Seção 4: Público */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">👥 Público-Alvo</h2>
+            <h2 className="text-lg font-semibold">4️⃣ Seu cliente ideal</h2>
+            <p className="text-xs text-muted-foreground">Quem é a pessoa que mais precisa do que você vende?</p>
             <div>
-              <label className="text-sm font-medium">Descreva seu cliente ideal *</label>
-              <Textarea value={form.targetAudience} onChange={(e) => update("targetAudience", e.target.value)} placeholder="Quem é seu cliente ideal? (cargo, idade, empresa, comportamento...)" />
+              <label className="text-sm font-medium">Descreva brevemente seu cliente ideal</label>
+              <Input value={form.targetAudience} onChange={(e) => update("targetAudience", e.target.value)} placeholder="Ex: Dono de e-commerce faturando R$ 50-200k/mês que quer escalar" className="mt-1" />
             </div>
             <div>
-              <label className="text-sm font-medium">Dores do público</label>
-              <TagInput value={form.audiencePains} onChange={(v) => update("audiencePains", v)} placeholder="Principais dores/problemas do seu público" />
+              <label className="text-sm font-medium">O que esse cliente mais sofre? (adicione e pressione Enter)</label>
+              <TagInput value={form.audiencePains} onChange={(v) => update("audiencePains", v)} placeholder="Ex: Não consegue vender, Gasta muito em ads..." />
             </div>
             <div>
-              <label className="text-sm font-medium">Desejos do público</label>
-              <TagInput value={form.audienceDesires} onChange={(v) => update("audienceDesires", v)} placeholder="O que seu público mais deseja alcançar?" />
+              <label className="text-sm font-medium">O que ele mais deseja? (adicione e pressione Enter)</label>
+              <TagInput value={form.audienceDesires} onChange={(v) => update("audienceDesires", v)} placeholder="Ex: Faturar 2x mais, Ter previsibilidade..." />
             </div>
           </section>
 
-          {/* Seção 5: Branding desejado */}
+          {/* Seção 5: Personalidade */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">✨ Branding & Personalidade</h2>
+            <h2 className="text-lg font-semibold">5️⃣ Personalidade da marca</h2>
+            <p className="text-xs text-muted-foreground">Como você quer ser percebido?</p>
             <div>
-              <label className="text-sm font-medium">Tom de voz desejado</label>
-              <TagInput value={form.brandTone} onChange={(v) => update("brandTone", v)} placeholder="Ex: Profissional, Ousado, Premium..." />
+              <label className="text-sm font-medium">Tom de voz (selecione até 3)</label>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                {["Profissional", "Ousado", "Amigável", "Premium", "Educativo", "Direto", "Inspirador", "Técnico", "Descontraído", "Autoritário", "Empático", "Provocativo"].map(opt => (
+                  <button key={opt} onClick={() => {
+                    const current = form.brandTone || []
+                    const updated = current.includes(opt) ? current.filter((c: string) => c !== opt) : current.length < 3 ? [...current, opt] : current
+                    update("brandTone", updated)
+                  }}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${(form.brandTone || []).includes(opt) ? "border-purple-500 bg-purple-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Valores da marca</label>
-              <TagInput value={form.brandValues} onChange={(v) => update("brandValues", v)} placeholder="Ex: Inovação, Transparência, Resultado..." />
+              <label className="text-sm font-medium">Valores da marca (selecione até 4)</label>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                {["Inovação", "Transparência", "Resultado", "Qualidade", "Velocidade", "Confiança", "Exclusividade", "Simplicidade", "Liberdade", "Comunidade", "Crescimento", "Impacto"].map(opt => (
+                  <button key={opt} onClick={() => {
+                    const current = form.brandValues || []
+                    const updated = current.includes(opt) ? current.filter((c: string) => c !== opt) : current.length < 4 ? [...current, opt] : current
+                    update("brandValues", updated)
+                  }}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${(form.brandValues || []).includes(opt) ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Marcas de inspiração</label>
-              <TagInput value={form.inspirations} onChange={(v) => update("inspirations", v)} placeholder="Marcas que você admira (qualquer nicho)" />
+              <label className="text-sm font-medium">Marcas que te inspiram (adicione e pressione Enter)</label>
+              <TagInput value={form.inspirations} onChange={(v) => update("inspirations", v)} placeholder="Ex: Apple, Nike, King Kong Agency..." />
             </div>
           </section>
 
           {/* Seção 6: Objetivos */}
           <section className="bg-card rounded-xl border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">🎯 Objetivos</h2>
+            <h2 className="text-lg font-semibold">6️⃣ Onde quer chegar?</h2>
+            <p className="text-xs text-muted-foreground">Seus objetivos principais.</p>
             <div>
-              <label className="text-sm font-medium">Qual seu principal objetivo? *</label>
-              <Textarea value={form.goals} onChange={(e) => update("goals", e.target.value)} placeholder="Ex: Dobrar o faturamento, reposicionar a marca, aumentar autoridade..." />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Timeline</label>
-                <Input value={form.timeline} onChange={(e) => update("timeline", e.target.value)} placeholder="Ex: 6 meses" />
+              <label className="text-sm font-medium">Principal objetivo agora</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {[
+                  "🚀 Crescer faturamento", "🎯 Reposicionar marca", "📈 Mais leads/clientes",
+                  "💰 Aumentar ticket médio", "🌐 Presença digital", "📊 Escalar operação"
+                ].map(opt => (
+                  <button key={opt} onClick={() => update("goals", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs text-left transition-all ${form.goals === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
               </div>
-              <div>
-                <label className="text-sm font-medium">Budget mensal para marketing</label>
-                <Input value={form.monthlyBudget} onChange={(e) => update("monthlyBudget", e.target.value)} placeholder="Ex: R$ 5.000" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Em quanto tempo?</label>
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {["3 meses", "6 meses", "1 ano", "Sem pressa"].map(opt => (
+                  <button key={opt} onClick={() => update("timeline", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.timeline === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Budget mensal para marketing</label>
+              <div className="grid grid-cols-5 gap-2 mt-2">
+                {["Até R$ 1k", "R$ 1-5k", "R$ 5-15k", "R$ 15-50k", "R$ 50k+"].map(opt => (
+                  <button key={opt} onClick={() => update("monthlyBudget", opt)}
+                    className={`px-3 py-2 rounded-lg border text-xs transition-all ${form.monthlyBudget === opt ? "border-emerald-500 bg-emerald-50 font-medium" : "hover:border-gray-400"}`}>{opt}</button>
+                ))}
               </div>
             </div>
           </section>
 
-          <Button onClick={handleSubmit} disabled={loading || !form.name || !form.industry} size="lg" className="w-full gradient-brand text-white">
+          <Button onClick={handleSubmit} disabled={loading || !form.name || !form.industry} size="lg" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
             {loading ? "🧠 Gerando análise com IA..." : "🚀 Gerar Análise Estratégica Completa"}
           </Button>
         </div>
