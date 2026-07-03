@@ -161,9 +161,20 @@ export default function WhatsAppPage() {
               </Button>
               {error && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-left mt-3">
-                  <p className="text-sm text-amber-800 font-medium mb-1">⚠️ Conexão não disponível</p>
+                  <p className="text-sm text-amber-800 font-medium mb-1">⚠️ Erro de Conexão</p>
                   <p className="text-xs text-amber-700">{error}</p>
-                  <p className="text-xs text-muted-foreground mt-2">Para usar o WhatsApp online, hospede a Evolution API em Railway.app ou Render.com e configure a URL nas variáveis de ambiente.</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Verifique se a Evolution API está rodando corretamente no seu servidor (Railway/Render). 
+                    Caso o serviço esteja retornando erro 502, reinicie o deploy no Railway.
+                  </p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="mt-2"
+                    onClick={handleConnect}
+                  >
+                    🔄 Tentar Novamente
+                  </Button>
                 </div>
               )}
             </div>

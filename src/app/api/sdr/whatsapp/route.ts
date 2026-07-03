@@ -62,9 +62,8 @@ export async function POST(req: NextRequest) {
       const EVO_URL = process.env.EVOLUTION_API_URL || "http://localhost:8080"
       const EVO_KEY = process.env.EVOLUTION_API_KEY || "zen-power-evo-key-2024"
 
-      // Check if Evolution API is reachable
-      if (!process.env.EVOLUTION_API_URL || EVO_URL === "http://localhost:8080") {
-        // In production without Evolution API configured, return helpful message
+      // Check if Evolution API URL is configured (only block if truly not set)
+      if (!process.env.EVOLUTION_API_URL) {
         const session = await prisma.whatsappSession.upsert({
           where: { companyId },
           update: { status: "ERROR" },
@@ -73,7 +72,38 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ 
           ...session, 
           status: "ERROR",
-          error: "Evolution API não configurada. Para usar o WhatsApp online, configure EVOLUTION_API_URL nas variáveis de ambiente apontando para sua instância da Evolution API (Railway, Render ou servidor próprio)." 
+          error: "Evolution API não configurada. Adicione EVOLUTION_API_URL nas variáveis de ambiente do Vercel." 
+        })
+      }
+
+      // Test connectivity first
+      try {
+        const testRes = await fetch(`${EVO_URL}/instance/fetchInstances`, {
+          headers: { apikey: EVO_KEY },
+          signal: AbortSignal.timeout(10000),
+        })
+        if (!testRes.ok && testRes.status >= 500) {
+          const session = await prisma.whatsappSession.upsert({
+            where: { companyId },
+            update: { status: "ERROR" },
+            create: { companyId, status: "ERROR" },
+          })
+          return NextResponse.json({ 
+            ...session, 
+            status: "ERROR",
+            error: `Evolution API está offline (status ${testRes.status}). Verifique se o serviço está rodando em: ${EVO_URL}` 
+          })
+        }
+      } catch (connError: any) {
+        const session = await prisma.whatsappSession.upsert({
+          where: { companyId },
+          update: { status: "ERROR" },
+          create: { companyId, status: "ERROR" },
+        })
+        return NextResponse.json({ 
+          ...session, 
+          status: "ERROR",
+          error: `Não foi possível conectar à Evolution API em ${EVO_URL}. Verifique se o serviço está rodando. Erro: ${connError?.message || "timeout"}` 
         })
       }
 
