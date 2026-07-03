@@ -188,11 +188,52 @@ function MercadoResults({ reportId }: { reportId: string }) {
     { key: "swot", label: "🎯 SWOT" },
     { key: "competitorAnalysis", label: "⚔️ Concorrentes" },
     { key: "porter", label: "🏗️ 5 Forças" },
+    { key: "bcgMatrix", label: "📦 BCG" },
+    { key: "ansoff", label: "📈 Ansoff" },
+    { key: "valueChain", label: "🔗 Cadeia Valor" },
+    { key: "customerJourney", label: "🗺️ Jornada" },
+    { key: "positioning", label: "🎯 Posicionamento" },
     { key: "opportunities", label: "🚀 Oportunidades" },
   ]
 
+  const handleDownloadPDF = () => {
+    const content = JSON.stringify(data, null, 2)
+    const blob = new Blob([`RELATÓRIO DE ANÁLISE DE MERCADO\n${"=".repeat(50)}\n\n${formatDataForPDF(data)}`], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `analise-mercado-${new Date().toISOString().split("T")[0]}.txt`
+    a.click()
+  }
+
+  const handleExportCode = () => {
+    const code = {
+      _type: "eco_strategic_code",
+      _version: "1.0",
+      _generated: new Date().toISOString(),
+      market: data.marketOverview || {},
+      swot: data.swot || {},
+      competitors: data.competitorAnalysis || {},
+      opportunities: data.opportunities || {},
+      positioning: data.positioning || {},
+      customerJourney: data.customerJourney || {},
+    }
+    const blob = new Blob([JSON.stringify(code, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `eco-strategic-code-${new Date().toISOString().split("T")[0]}.json`
+    a.click()
+  }
+
   return (
     <div>
+      {/* Action buttons */}
+      <div className="flex gap-2 mb-4">
+        <Button size="sm" variant="outline" onClick={handleDownloadPDF}>📄 Baixar Relatório</Button>
+        <Button size="sm" variant="outline" onClick={handleExportCode}>📦 Exportar Código Estratégico</Button>
+      </div>
+
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
@@ -336,8 +377,81 @@ function MercadoResults({ reportId }: { reportId: string }) {
           <RenderSection data={data.opportunities} />
         </div>
       )}
+
+      {/* BCG Matrix */}
+      {activeTab === "bcgMatrix" && data.bcgMatrix && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5">
+              <h3 className="font-bold text-yellow-800 mb-2">⭐ Estrelas</h3>
+              <p className="text-xs text-muted-foreground mb-2">Alto crescimento + Alta participação</p>
+              {(data.bcgMatrix.estrelas || []).map((i: any, idx: number) => <div key={idx} className="text-sm mb-1">• {i.produto} → {i.acao}</div>)}
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+              <h3 className="font-bold text-green-800 mb-2">🐄 Vacas Leiteiras</h3>
+              <p className="text-xs text-muted-foreground mb-2">Baixo crescimento + Alta participação</p>
+              {(data.bcgMatrix.vacas_leiteiras || []).map((i: any, idx: number) => <div key={idx} className="text-sm mb-1">• {i.produto} → {i.acao}</div>)}
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+              <h3 className="font-bold text-blue-800 mb-2">❓ Interrogações</h3>
+              <p className="text-xs text-muted-foreground mb-2">Alto crescimento + Baixa participação</p>
+              {(data.bcgMatrix.interrogacoes || []).map((i: any, idx: number) => <div key={idx} className="text-sm mb-1">• {i.produto} → {i.acao}</div>)}
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+              <h3 className="font-bold text-gray-800 mb-2">🐕 Abacaxis</h3>
+              <p className="text-xs text-muted-foreground mb-2">Baixo crescimento + Baixa participação</p>
+              {(data.bcgMatrix.abacaxis || []).map((i: any, idx: number) => <div key={idx} className="text-sm mb-1">• {i.produto} → {i.acao}</div>)}
+            </div>
+          </div>
+          {data.bcgMatrix.recomendacao_portfolio && <div className="bg-card rounded-xl border p-4"><p className="text-sm">💡 {data.bcgMatrix.recomendacao_portfolio}</p></div>}
+        </div>
+      )}
+
+      {/* Ansoff */}
+      {activeTab === "ansoff" && data.ansoff && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { key: "penetracao_mercado", label: "Penetração", icon: "🎯", color: "emerald" },
+              { key: "desenvolvimento_produto", label: "Novo Produto", icon: "🆕", color: "blue" },
+              { key: "desenvolvimento_mercado", label: "Novo Mercado", icon: "🌍", color: "purple" },
+              { key: "diversificacao", label: "Diversificação", icon: "🔀", color: "orange" },
+            ].map(q => {
+              const d = data.ansoff[q.key]
+              return (
+                <div key={q.key} className={`bg-${q.color}-50 border border-${q.color}-200 rounded-xl p-5`}>
+                  <h3 className="font-bold text-sm mb-1">{q.icon} {q.label}</h3>
+                  <p className="text-xs mb-2">{d?.estrategia}</p>
+                  <p className="text-xs text-muted-foreground">Risco: {d?.risco} | ROI: {d?.roi_estimado}</p>
+                </div>
+              )
+            })}
+          </div>
+          {data.ansoff.estrategia_recomendada && <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4"><p className="text-sm font-medium">✅ Recomendada: {data.ansoff.estrategia_recomendada}</p><p className="text-xs mt-1">{data.ansoff.justificativa}</p></div>}
+        </div>
+      )}
+
+      {/* Value Chain, Customer Journey, Positioning - generic */}
+      {activeTab === "valueChain" && data.valueChain && (
+        <div className="bg-card rounded-xl border p-6"><RenderSection data={data.valueChain} /></div>
+      )}
+      {activeTab === "customerJourney" && data.customerJourney && (
+        <div className="bg-card rounded-xl border p-6"><RenderSection data={data.customerJourney} /></div>
+      )}
+      {activeTab === "positioning" && data.positioning && (
+        <div className="bg-card rounded-xl border p-6"><RenderSection data={data.positioning} /></div>
+      )}
     </div>
   )
+}
+
+function formatDataForPDF(data: any): string {
+  let text = ""
+  for (const [section, content] of Object.entries(data)) {
+    text += `\n${"=".repeat(40)}\n${section.toUpperCase().replace(/([A-Z])/g, " $1")}\n${"=".repeat(40)}\n\n`
+    text += JSON.stringify(content, null, 2).replace(/[{}\[\]"]/g, "").replace(/,\n/g, "\n") + "\n"
+  }
+  return text
 }
 
 function RenderSection({ data }: { data: any }) {

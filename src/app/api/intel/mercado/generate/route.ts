@@ -124,6 +124,89 @@ Gere pelo menos 4 itens em cada quadrante.`,
 }`,
         user: `Oportunidades e estratégia:\n${context}`,
       },
+      {
+        key: "bcgMatrix",
+        system: `Você é um consultor estratégico usando a Matriz BCG. Classifique os produtos/serviços. Responda em JSON:
+{
+  "estrelas": [{"produto": "", "crescimento": "", "participacao": "", "acao": ""}],
+  "vacas_leiteiras": [{"produto": "", "crescimento": "", "participacao": "", "acao": ""}],
+  "interrogacoes": [{"produto": "", "crescimento": "", "participacao": "", "acao": ""}],
+  "abacaxis": [{"produto": "", "crescimento": "", "participacao": "", "acao": ""}],
+  "recomendacao_portfolio": ""
+}`,
+        user: `Matriz BCG:\n${context}`,
+      },
+      {
+        key: "ansoff",
+        system: `Você é um estrategista usando a Matriz de Ansoff para crescimento. Responda em JSON:
+{
+  "penetracao_mercado": {"estrategia": "", "acoes": [], "risco": "baixo/medio/alto", "roi_estimado": ""},
+  "desenvolvimento_produto": {"estrategia": "", "acoes": [], "risco": "baixo/medio/alto", "roi_estimado": ""},
+  "desenvolvimento_mercado": {"estrategia": "", "acoes": [], "risco": "baixo/medio/alto", "roi_estimado": ""},
+  "diversificacao": {"estrategia": "", "acoes": [], "risco": "baixo/medio/alto", "roi_estimado": ""},
+  "estrategia_recomendada": "",
+  "justificativa": ""
+}`,
+        user: `Matriz de Ansoff:\n${context}`,
+      },
+      {
+        key: "valueChain",
+        system: `Você é um especialista em Cadeia de Valor de Porter. Analise as atividades primárias e de suporte. Responda em JSON:
+{
+  "atividades_primarias": {
+    "logistica_entrada": {"descricao": "", "otimizacao": ""},
+    "operacoes": {"descricao": "", "otimizacao": ""},
+    "logistica_saida": {"descricao": "", "otimizacao": ""},
+    "marketing_vendas": {"descricao": "", "otimizacao": ""},
+    "servico_pos_venda": {"descricao": "", "otimizacao": ""}
+  },
+  "atividades_suporte": {
+    "infraestrutura": "",
+    "gestao_rh": "",
+    "tecnologia": "",
+    "aquisicao": ""
+  },
+  "margem_valor": "",
+  "gargalos": [],
+  "quick_wins": []
+}`,
+        user: `Cadeia de Valor:\n${context}`,
+      },
+      {
+        key: "customerJourney",
+        system: `Você é especialista em Customer Experience e Jornada do Cliente. Responda em JSON:
+{
+  "persona": {"nome": "", "idade": "", "cargo": "", "dor_principal": "", "desejo": ""},
+  "jornada": [
+    {"etapa": "Descoberta", "touchpoints": [], "emocao": "", "acao_cliente": "", "oportunidade": ""},
+    {"etapa": "Consideracao", "touchpoints": [], "emocao": "", "acao_cliente": "", "oportunidade": ""},
+    {"etapa": "Decisao", "touchpoints": [], "emocao": "", "acao_cliente": "", "oportunidade": ""},
+    {"etapa": "Compra", "touchpoints": [], "emocao": "", "acao_cliente": "", "oportunidade": ""},
+    {"etapa": "Pos-venda", "touchpoints": [], "emocao": "", "acao_cliente": "", "oportunidade": ""},
+    {"etapa": "Advocacia", "touchpoints": [], "emocao": "", "acao_cliente": "", "oportunidade": ""}
+  ],
+  "momentos_verdade": [],
+  "gatilhos_conversao": [],
+  "objecoes": [{"objecao": "", "resposta": ""}]
+}`,
+        user: `Jornada do Cliente:\n${context}`,
+      },
+      {
+        key: "positioning",
+        system: `Você é um estrategista de posicionamento usando Al Ries, Jack Trout e Chris Do (The Futur). Responda em JSON:
+{
+  "mapa_posicionamento": {"eixo_x": "", "eixo_y": "", "posicao_empresa": "", "posicao_concorrentes": [{"nome": "", "x": 1-10, "y": 1-10}]},
+  "category_of_one": "",
+  "proposta_valor_unica": "",
+  "tagline_sugerida": "",
+  "manifesto": "",
+  "elevator_pitch_30s": "",
+  "brand_promise": "",
+  "reasons_to_believe": [],
+  "diferencial_inimitavel": ""
+}`,
+        user: `Posicionamento estratégico:\n${context}`,
+      },
     ]
 
     // Generate all sections and wait for results
