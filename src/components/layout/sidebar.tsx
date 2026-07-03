@@ -9,6 +9,7 @@ const navItems = [
     items: [
       { href: "/intel/empresa", label: "Análise da Empresa", icon: "🏢" },
       { href: "/intel/mercado", label: "Análise do Mercado", icon: "📊" },
+      { href: "/intel/identidade", label: "Identidade Visual", icon: "🎨" },
     ],
   },
   {
