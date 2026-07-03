@@ -10,9 +10,9 @@ type Tab = "trafego" | "organico" | "prospeccao"
 type Platform = "meta" | "google" | "tiktok"
 
 const platformStatus = {
-  meta: { connected: false, label: "Meta Ads", icon: "📘", color: "blue" },
-  google: { connected: false, label: "Google Ads", icon: "🔍", color: "red" },
-  tiktok: { connected: false, label: "TikTok Ads", icon: "🎵", color: "purple" },
+  meta: { connected: false, label: "Meta Ads", icon: "📘", color: "blue", tokenField: "accessToken", idField: "adAccountId", tokenPlaceholder: "Cole seu Access Token", idPlaceholder: "act_XXXXXXXXXX" },
+  google: { connected: false, label: "Google Ads", icon: "🔍", color: "red", tokenField: "developerToken", idField: "customerId", tokenPlaceholder: "Developer Token", idPlaceholder: "XXX-XXX-XXXX" },
+  tiktok: { connected: false, label: "TikTok Ads", icon: "🎵", color: "purple", tokenField: "accessToken", idField: "advertiserId", tokenPlaceholder: "Access Token", idPlaceholder: "ID do Anunciante" },
 }
 
 export default function CampanhasPage() {
@@ -23,6 +23,8 @@ export default function CampanhasPage() {
   const [campaignResult, setCampaignResult] = useState<any>(null)
   const [showOptimization, setShowOptimization] = useState(false)
   const [showGuide, setShowGuide] = useState<string | null>(null)
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
+  const [credentials, setCredentials] = useState({ token: "", accountId: "" })
   const [campaignForm, setCampaignForm] = useState({
     objective: "leads",
     budget: "",
@@ -32,12 +34,29 @@ export default function CampanhasPage() {
     platforms: [] as Platform[],
   })
 
-  const connectPlatform = (platform: Platform) => {
-    // In production: OAuth flow with each platform
-    setPlatforms((prev) => ({
-      ...prev,
-      [platform]: { ...prev[platform], connected: true },
-    }))
+  const connectPlatform = async (platform: Platform) => {
+    if (!credentials.token || !credentials.accountId) {
+      alert("Preencha o Token e o ID da conta")
+      return
+    }
+    // Save credentials via API
+    try {
+      const res = await fetch("/api/campanhas/connect-platform", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform, token: credentials.token, accountId: credentials.accountId }),
+      })
+      if (res.ok) {
+        setPlatforms((prev) => ({ ...prev, [platform]: { ...prev[platform], connected: true } }))
+        setConnectingPlatform(null)
+        setCredentials({ token: "", accountId: "" })
+      } else {
+        const data = await res.json()
+        alert(data.error || "Erro ao conectar")
+      }
+    } catch {
+      alert("Erro ao conectar plataforma")
+    }
   }
 
   const handleCreateCampaign = async () => {
@@ -112,8 +131,10 @@ export default function CampanhasPage() {
                       </div>
                     ) : (
                       <div className="mt-2 space-y-2">
-                        <Button size="sm" variant="outline" onClick={() => connectPlatform(key)}>Já tenho conta</Button>
-                        <button onClick={() => setShowGuide(key)} className="text-xs text-blue-600 hover:underline block w-full">📖 Criar conta do zero</button>
+                        <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs" onClick={() => setConnectingPlatform(key)}>
+                          🔗 Conectar
+                        </Button>
+                        <button onClick={() => setShowGuide(key)} className="text-xs text-blue-600 hover:underline block w-full">📖 Não tenho conta</button>
                       </div>
                     )}
                   </div>
@@ -129,6 +150,50 @@ export default function CampanhasPage() {
             </div>
 
             {/* Guide Modal */}
+            {connectingPlatform && (
+              <div className="bg-card rounded-xl border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-sm">🔗 Conectar {platforms[connectingPlatform as Platform]?.label}</h3>
+                  <button onClick={() => setConnectingPlatform(null)} className="text-xs text-muted-foreground hover:text-foreground">✕ Fechar</button>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium">Access Token *</label>
+                    <Input
+                      type="password"
+                      value={credentials.token}
+                      onChange={(e) => setCredentials(c => ({ ...c, token: e.target.value }))}
+                      placeholder={platforms[connectingPlatform as Platform]?.tokenPlaceholder}
+                      className="mt-1 text-xs"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {connectingPlatform === "meta" && "Pegue em: developers.facebook.com → Ferramentas → Explorador da Graph API → Gerar Token"}
+                      {connectingPlatform === "google" && "Pegue em: ads.google.com → Ferramentas → Centro de API"}
+                      {connectingPlatform === "tiktok" && "Pegue em: business-api.tiktok.com → App → Access Token"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium">ID da Conta de Anúncios *</label>
+                    <Input
+                      value={credentials.accountId}
+                      onChange={(e) => setCredentials(c => ({ ...c, accountId: e.target.value }))}
+                      placeholder={platforms[connectingPlatform as Platform]?.idPlaceholder}
+                      className="mt-1 text-xs"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {connectingPlatform === "meta" && "Formato: act_123456789 (Business Manager → Contas de Anúncio → ID)"}
+                      {connectingPlatform === "google" && "Formato: 1234567890 (canto superior da conta Google Ads)"}
+                      {connectingPlatform === "tiktok" && "ID do Anunciante (painel TikTok Ads → canto superior)"}
+                    </p>
+                  </div>
+                  <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => connectPlatform(connectingPlatform as Platform)}>
+                    ✅ Conectar {platforms[connectingPlatform as Platform]?.label}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Platform Guide */}
             {showGuide && (
               <div className="bg-card rounded-xl border p-6">
                 <div className="flex items-center justify-between mb-4">
