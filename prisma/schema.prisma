@@ -221,6 +221,7 @@ model AiSettings {
   companyId            String   @unique
   aiName               String   @default("Assistente")
   tone                 String   @default("Consultivo, profissional e objetivo")
+  personality          String   @default("Consultivo e humano")
   segment              String?
   products             String?  @db.Text
   question1            String   @default("Qual é o principal objetivo que você deseja resolver agora?")
@@ -233,10 +234,37 @@ model AiSettings {
   businessHours        String?
   meetingLink          String?
   humanResponsible     String?
+  // Learning & Memory
+  successPatterns      String?  @db.Text
+  failurePatterns      String?  @db.Text
+  objectionHandling    String?  @db.Text
+  topPerformingScripts String?  @db.Text
+  learnedInsights      String?  @db.Text
+  conversionsCount     Int      @default(0)
+  totalConversations   Int      @default(0)
+  avgResponseTime      Int      @default(0)
+  conversionRate       Float    @default(0)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
   company CompanyTenant @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ==================== SDR LEARNING ====================
+
+model SdrLearning {
+  id          String   @id @default(cuid())
+  companyId   String
+  type        String   // "objection", "success_pattern", "failure_pattern", "insight"
+  trigger     String?  @db.Text // what the lead said
+  response    String?  @db.Text // what worked or didn't
+  outcome     String?  // "converted", "lost", "pending"
+  confidence  Float    @default(0.5)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([type])
 }
 
 // ==================== COMPANY PROFILE ====================

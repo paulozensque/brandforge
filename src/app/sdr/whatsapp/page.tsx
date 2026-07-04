@@ -35,7 +35,9 @@ export default function WhatsAppPage() {
       const res = await fetch("/api/sdr/conversations")
       if (res.ok) {
         const data = await res.json()
-        setRecentMessages(data.slice(0, 10))
+        if (Array.isArray(data)) {
+          setRecentMessages(data.slice(0, 10))
+        }
       }
     } catch {}
   }
@@ -81,7 +83,7 @@ export default function WhatsAppPage() {
 
   return (
     <AppShell>
-      <div className="p-8 max-w-3xl mx-auto">
+      <div className="p-8 max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">WhatsApp & SDR IA</h1>
           <p className="text-muted-foreground mt-1">Conexão, status e controle do atendimento automático.</p>
@@ -121,13 +123,13 @@ export default function WhatsAppPage() {
         <div className="bg-card rounded-xl border p-6 mb-6">
           {status === "CONNECTED" ? (
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 rounded-full bg-emerald-100 mx-auto flex items-center justify-center">
-                <span className="text-4xl">✅</span>
+              <div className="w-16 h-16 rounded-full bg-emerald-100 mx-auto flex items-center justify-center">
+                <span className="text-3xl">✅</span>
               </div>
               <div>
                 <p className="text-lg font-semibold text-emerald-700">WhatsApp Conectado!</p>
                 <p className="text-sm text-muted-foreground">
-                  {sdrActive ? "O SDR IA está ativo e respondendo mensagens automaticamente." : "SDR pausado. Mensagens serão recebidas mas não respondidas automaticamente."}
+                  {sdrActive ? "O SDR IA está ativo e respondendo mensagens automaticamente." : "SDR pausado. Mensagens recebidas mas não respondidas automaticamente."}
                 </p>
               </div>
               <div className="flex gap-2 justify-center">
@@ -153,8 +155,8 @@ export default function WhatsAppPage() {
             </div>
           ) : (
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 rounded-full bg-gray-100 mx-auto flex items-center justify-center">
-                <span className="text-4xl">📱</span>
+              <div className="w-16 h-16 rounded-full bg-gray-100 mx-auto flex items-center justify-center">
+                <span className="text-3xl">📱</span>
               </div>
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleConnect} disabled={loading}>
                 {loading ? "Gerando QR Code..." : "Conectar WhatsApp"}
@@ -163,16 +165,7 @@ export default function WhatsAppPage() {
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-left mt-3">
                   <p className="text-sm text-amber-800 font-medium mb-1">⚠️ Erro de Conexão</p>
                   <p className="text-xs text-amber-700">{error}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Verifique se a Evolution API está rodando corretamente no seu servidor (Railway/Render). 
-                    Caso o serviço esteja retornando erro 502, reinicie o deploy no Railway.
-                  </p>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="mt-2"
-                    onClick={handleConnect}
-                  >
+                  <Button size="sm" variant="outline" className="mt-2" onClick={handleConnect}>
                     🔄 Tentar Novamente
                   </Button>
                 </div>
@@ -181,28 +174,53 @@ export default function WhatsAppPage() {
           )}
         </div>
 
-        {/* Últimas conversas */}
+        {/* Últimas conversas - ALWAYS visible */}
         <div className="bg-card rounded-xl border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">💬 Últimas Conversas</h2>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = "/sdr/conversas"}>Ver todas</Button>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = "/sdr/conversas"}>
+              Ver todas →
+            </Button>
           </div>
 
           {recentMessages.length > 0 ? (
             <div className="space-y-3">
               {recentMessages.map((conv: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-all">
+                <div 
+                  key={conv.id || i} 
+                  className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-all cursor-pointer"
+                  onClick={() => window.location.href = "/sdr/conversas"}
+                >
                   <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg">👤</span>
+                    <span className="text-lg">
+                      {conv.lead?.classification === "HOT" ? "🔥" : conv.lead?.classification === "WARM" ? "☀️" : "👤"}
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{conv.lead?.name || conv.lead?.phone || "Lead"}</p>
-                    <p className="text-xs text-muted-foreground truncate">{conv.messages?.[0]?.content || "..."}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate">{conv.lead?.name || conv.lead?.phone || "Lead"}</p>
+                      {conv.lead?.score > 0 && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          conv.lead.score >= 61 ? "bg-red-50 text-red-600" :
+                          conv.lead.score >= 31 ? "bg-amber-50 text-amber-600" :
+                          "bg-blue-50 text-blue-600"
+                        }`}>
+                          {conv.lead.score}/100
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {conv.messages?.[0]?.role === "ASSISTANT" ? "🤖 " : "👤 "}
+                      {conv.messages?.[0]?.content || "..."}
+                    </p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       conv.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
                     }`}>{conv.status === "ACTIVE" ? "Ativa" : "Concluída"}</span>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(conv.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -216,14 +234,43 @@ export default function WhatsAppPage() {
           )}
         </div>
 
+        {/* Stats */}
+        {recentMessages.length > 0 && (
+          <div className="grid grid-cols-4 gap-3 mt-4">
+            <div className="bg-card rounded-lg border p-3 text-center">
+              <p className="text-xs text-muted-foreground">Total Conversas</p>
+              <p className="text-xl font-bold text-emerald-600">{recentMessages.length}</p>
+            </div>
+            <div className="bg-card rounded-lg border p-3 text-center">
+              <p className="text-xs text-muted-foreground">Leads Quentes</p>
+              <p className="text-xl font-bold text-red-600">
+                {recentMessages.filter(c => c.lead?.classification === "HOT").length}
+              </p>
+            </div>
+            <div className="bg-card rounded-lg border p-3 text-center">
+              <p className="text-xs text-muted-foreground">Leads Mornos</p>
+              <p className="text-xl font-bold text-amber-600">
+                {recentMessages.filter(c => c.lead?.classification === "WARM").length}
+              </p>
+            </div>
+            <div className="bg-card rounded-lg border p-3 text-center">
+              <p className="text-xs text-muted-foreground">Ativas</p>
+              <p className="text-xl font-bold text-blue-600">
+                {recentMessages.filter(c => c.status === "ACTIVE").length}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Info */}
         <div className="mt-4 bg-card rounded-lg border p-4">
-          <h3 className="text-sm font-medium mb-2">ℹ️ Como funciona:</h3>
+          <h3 className="text-sm font-medium mb-2">🧠 Como o SDR IA funciona:</h3>
           <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-            <li>Alguém envia mensagem no seu WhatsApp</li>
-            <li>A mensagem chega aqui e cria um lead no CRM automaticamente</li>
-            <li>O SDR IA responde seguindo o fluxo de qualificação configurado</li>
-            <li>Quando qualificado, sugere reunião e registra no agendamento</li>
+            <li>Mensagem chega → detecta intenção (saudação, interesse, objeção, preço...)</li>
+            <li>Identifica estágio da conversa (abertura, descoberta, qualificação, fechamento)</li>
+            <li>Gera resposta personalizada usando técnicas de SDR avançadas</li>
+            <li>Pontua o lead automaticamente (0-100) e classifica (Frio/Morno/Quente)</li>
+            <li>Aprende com cada interação para melhorar respostas futuras</li>
           </ol>
         </div>
       </div>

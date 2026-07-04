@@ -26,13 +26,33 @@ export async function PUT(req: NextRequest) {
   try {
     const companyId = await getCompanyId()
     const body = await req.json()
+    // Remove non-model fields
+    const { id, createdAt, updatedAt, company, ...data } = body
     const settings = await prisma.aiSettings.upsert({
       where: { companyId },
-      update: body,
-      create: { companyId, ...body },
+      update: data,
+      create: { companyId, ...data },
     })
     return NextResponse.json(settings)
   } catch (error) {
+    return NextResponse.json({ error: "Erro ao salvar" }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const companyId = await getCompanyId()
+    const body = await req.json()
+    // Remove non-model fields
+    const { id, createdAt, updatedAt, company, companyId: _, ...data } = body
+    const settings = await prisma.aiSettings.upsert({
+      where: { companyId },
+      update: data,
+      create: { companyId, ...data },
+    })
+    return NextResponse.json(settings)
+  } catch (error: any) {
+    console.error("Settings save error:", error?.message)
     return NextResponse.json({ error: "Erro ao salvar" }, { status: 500 })
   }
 }
