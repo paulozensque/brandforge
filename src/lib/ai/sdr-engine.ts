@@ -138,7 +138,7 @@ export async function processSDRMessage(ctx: SDRContext): Promise<string> {
   const stage = detectStage(messages, undefined)
   
   // Build advanced system prompt
-  const systemPrompt = buildAdvancedPrompt(settings, profile, lead, stage, intent, learnings || [])
+  const systemPrompt = await buildAdvancedPrompt(settings, profile, lead, stage, intent, learnings || [], companyId)
   
   // Build conversation history (optimized for context window)
   const recentMessages = messages.slice(-15)
@@ -195,14 +195,15 @@ export async function processSDRMessage(ctx: SDRContext): Promise<string> {
 
 // ==================== ADVANCED PROMPT BUILDER ====================
 
-function buildAdvancedPrompt(
+async function buildAdvancedPrompt(
   settings: any, 
   profile: any, 
   lead: any,
   stage: ConversationStage,
   intent: Intent,
-  learnings: any[]
-): string {
+  learnings: any[],
+  companyId: string
+): Promise<string> {
   const aiName = settings?.aiName || "Assistente"
   const tone = settings?.tone || "Consultivo, profissional e objetivo"
   const personality = settings?.personality || "Humano, empático e estratégico"
@@ -259,7 +260,8 @@ function buildAdvancedPrompt(
 - Sugira o próximo passo concreto (reunião, demonstração, etc.)
 - Ofereça 2-3 opções de horário
 ${meetingLink ? `- Link de agendamento: ${meetingLink}` : "- Proponha horários disponíveis"}
-- Facilite ao máximo para o lead dizer "sim"`,
+- Facilite ao máximo para o lead dizer "sim"
+- Se o Google Calendar estiver integrado, os horários sugeridos são horários reais disponíveis na agenda`,
     
     scheduled: `ESTÁGIO ATUAL: REUNIÃO AGENDADA
 - Confirme o agendamento
@@ -312,7 +314,7 @@ ${lead.interest ? `- Interesse: ${lead.interest}` : ""}
 ${lead.notes ? `- Observações: ${lead.notes}` : ""}`
     : ""
 
-  return `Você é ${aiName}, um SDR (Sales Development Representative) de alto desempenho.
+  const basePrompt = `Você é ${aiName}, um SDR (Sales Development Representative) de alto desempenho.
 Personalidade: ${personality}.
 Tom de comunicação: ${tone}.
 
@@ -357,6 +359,20 @@ ${rules ? `- ${rules}` : ""}
 ${forbidden ? `- NUNCA fale sobre: ${forbidden}` : ""}
 
 Responda APENAS com o texto da mensagem. Seja breve, humano e estratégico.`
+
+  // Inject available scheduling slots if in closing stage or scheduling intent
+  if (stage === "closing" || intent === "scheduling") {
+    try {
+      const { getSuggestedSlots } = await import("@/lib/google-calendar")
+      const slots = await getSuggestedSlots(companyId)
+      if (slots.length > 0) {
+        const slotsText = slots.map(s => `${s.date} às ${s.time}`).join(" | ")
+        return basePrompt + `\n\nHORÁRIOS DISPONÍVEIS NA AGENDA (reais, do Google Calendar):\n${slotsText}\nUse esses horários ao sugerir reunião. São horários confirmadamente livres.`
+      }
+    } catch {}
+  }
+
+  return basePrompt
 }
 
 // ==================== LEAD SCORING ====================

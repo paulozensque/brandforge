@@ -317,6 +317,12 @@ model CalendarConfig {
   meetingDuration Int      @default(30)
   responsible     String?
   blockedSlots    Json?
+  // Google Calendar Integration
+  googleConnected     Boolean  @default(false)
+  googleAccessToken   String?  @db.Text
+  googleRefreshToken  String?  @db.Text
+  googleCalendarId    String?  @default("primary")
+  googleTokenExpiry   DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
