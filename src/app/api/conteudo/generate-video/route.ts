@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { generateTalkingHeadVideo, getTalkStatus, isDIDConfigured, uploadImageToDID } from "@/lib/ai/video-generator"
+import { generateTalkingHeadVideo, getTalkStatus, isDIDConfigured, uploadImageToDID, uploadAudioToDID } from "@/lib/ai/video-generator"
 
 export const maxDuration = 120 // Allow up to 2 minutes for video generation
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { script, imageUrl, imageBase64, voiceId, action, talkId } = body
+    const { script, imageUrl, imageBase64, audioBase64, voiceId, action, talkId } = body
 
     // Check status of existing talk
     if (action === "status" && talkId) {
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    if (!script) {
-      return NextResponse.json({ success: false, error: "Script é obrigatório" }, { status: 400 })
+    if (!script && !audioBase64) {
+      return NextResponse.json({ success: false, error: "Script ou áudio é obrigatório" }, { status: 400 })
     }
 
     // Get image URL - either from direct URL or upload base64
@@ -40,8 +40,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Imagem é obrigatória (URL ou base64)" }, { status: 400 })
     }
 
+    // Upload audio if provided (user's voice from video)
+    let audioUrl: string | undefined
+    if (audioBase64) {
+      const uploaded = await uploadAudioToDID(audioBase64)
+      if (uploaded) {
+        audioUrl = uploaded
+      } else {
+        // Fallback to TTS if audio upload fails
+        console.log("Audio upload failed, falling back to TTS")
+      }
+    }
+
     // Generate the video
-    const result = await generateTalkingHeadVideo(sourceUrl, script, voiceId)
+    const result = await generateTalkingHeadVideo(sourceUrl, script || "", voiceId, audioUrl)
 
     return NextResponse.json(result)
   } catch (error: any) {

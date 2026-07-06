@@ -14,7 +14,8 @@ const D_ID_BASE_URL = "https://api.d-id.com"
 
 interface TalkRequest {
   sourceImageUrl: string  // URL of the face photo (or base64 data URI)
-  script: string          // Text the avatar will speak
+  script?: string          // Text the avatar will speak (if using TTS)
+  audioUrl?: string       // URL of audio file (if using custom voice)
   voiceId?: string        // D-ID voice ID (optional, defaults to Brazilian Portuguese)
   language?: string       // Language code
 }
@@ -24,6 +25,36 @@ interface TalkResult {
   status: "created" | "started" | "done" | "error"
   resultUrl?: string
   error?: string
+}
+
+// Upload audio to D-ID
+export async function uploadAudioToDID(audioBase64: string, mimeType: string = "audio/mpeg"): Promise<string | null> {
+  if (!D_ID_API_KEY) return null
+
+  try {
+    const base64Data = audioBase64.replace(/^data:audio\/\w+;base64,/, "").replace(/^data:video\/\w+;base64,/, "")
+    const buffer = Buffer.from(base64Data, "base64")
+
+    const res = await fetch(`${D_ID_BASE_URL}/audios`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${D_ID_API_KEY}`,
+        "Content-Type": mimeType,
+      },
+      body: buffer,
+    })
+
+    if (!res.ok) {
+      console.error("D-ID audio upload error:", res.status)
+      return null
+    }
+
+    const data = await res.json()
+    return data.url || data.id || null
+  } catch (error: any) {
+    console.error("D-ID audio upload error:", error?.message)
+    return null
+  }
 }
 
 // Upload image to D-ID
@@ -66,18 +97,30 @@ export async function createTalkingVideo(request: TalkRequest): Promise<TalkResu
   try {
     const body: any = {
       source_url: request.sourceImageUrl,
-      script: {
-        type: "text",
-        input: request.script,
-        provider: {
-          type: "microsoft",
-          voice_id: request.voiceId || "pt-BR-AntonioNeural", // Brazilian Portuguese male
-        },
-      },
       config: {
         fluent: true,
         pad_audio: 0.5,
       },
+    }
+
+    // Use audio URL if provided (custom voice from user's video)
+    if (request.audioUrl) {
+      body.script = {
+        type: "audio",
+        audio_url: request.audioUrl,
+      }
+    } else if (request.script) {
+      // Use text-to-speech
+      body.script = {
+        type: "text",
+        input: request.script,
+        provider: {
+          type: "microsoft",
+          voice_id: request.voiceId || "pt-BR-AntonioNeural",
+        },
+      }
+    } else {
+      return { id: "", status: "error", error: "Script ou áudio é obrigatório" }
     }
 
     const res = await fetch(`${D_ID_BASE_URL}/talks`, {
@@ -164,11 +207,13 @@ export async function generateTalkingHeadVideo(
   imageUrl: string,
   script: string,
   voiceId?: string,
+  audioUrl?: string,
 ): Promise<{ success: boolean; videoUrl?: string; error?: string; talkId?: string }> {
   // Step 1: Create the talk
   const talk = await createTalkingVideo({
     sourceImageUrl: imageUrl,
-    script,
+    script: audioUrl ? undefined : script,
+    audioUrl,
     voiceId,
   })
 

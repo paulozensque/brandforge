@@ -105,27 +105,44 @@ export default function ConteudoPage() {
     setGeneratedVideo(null)
     try {
       // Get the script from the result
-      const script = result.content?.roteiro || result.content?.script || 
+      const script = result.content?.roteiro_ou_copy || result.content?.roteiro || result.content?.script || 
                      result.content?.texto || result.content?.copy ||
                      result.content?.headline_principal || 
                      (typeof result.content === "string" ? result.content : JSON.stringify(result.content))
 
-      // Convert photo to base64 for upload
-      const response = await fetch(photoPreview)
-      const blob = await response.blob()
-      const reader = new FileReader()
-      
-      const base64 = await new Promise<string>((resolve) => {
+      // Convert photo to base64
+      const photoResponse = await fetch(photoPreview)
+      const photoBlob = await photoResponse.blob()
+      const photoBase64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
         reader.onloadend = () => resolve(reader.result as string)
-        reader.readAsDataURL(blob)
+        reader.readAsDataURL(photoBlob)
       })
+
+      // If video was uploaded, extract audio (send video as audio source)
+      let audioBase64: string | undefined
+      if (videoPreview) {
+        try {
+          const videoResponse = await fetch(videoPreview)
+          const videoBlob = await videoResponse.blob()
+          audioBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(videoBlob)
+          })
+        } catch {
+          // If audio extraction fails, fall back to TTS
+          console.log("Could not extract audio from video, using TTS")
+        }
+      }
 
       const res = await fetch("/api/conteudo/generate-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           script: typeof script === "string" ? script.substring(0, 1000) : String(script).substring(0, 1000),
-          imageBase64: base64,
+          imageBase64: photoBase64,
+          audioBase64: audioBase64,
         }),
       })
       
@@ -446,7 +463,9 @@ export default function ConteudoPage() {
                 <div className="border-t pt-4 mt-4">
                   <h3 className="font-semibold mb-3">🎬 Gerar Vídeo com IA (Avatar Falante)</h3>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Usa a foto enviada para criar um vídeo com avatar falante o roteiro gerado. Powered by D-ID.
+                    {videoPreview 
+                      ? "Usa a foto + voz do vídeo enviado para criar o avatar falando o roteiro."
+                      : "Usa a foto enviada com voz TTS (sintetizada) para falar o roteiro."}
                   </p>
                   
                   {generatedVideo ? (
@@ -519,17 +538,21 @@ export default function ConteudoPage() {
               {/* Gerar Imagem com IA */}
               {(format === "imagem" || format === "carrossel") && (
                 <div className="border-t pt-4 mt-4">
-                  <h3 className="font-semibold mb-3">🎨 Gerar Visual com IA</h3>
+                  <h3 className="font-semibold mb-3">🎨 Gerar Visual com IA (DALL-E 3)</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Gera a imagem/criativo automaticamente usando o contexto da sua empresa e o conteúdo criado.
+                  </p>
                   <Button
                     onClick={() => {
                       const promptVisual = result.content?.prompt_visual || result.content?.dica_visual || 
-                        `Professional ${mode === "criativo" ? "advertisement" : "social media post"} visual for: ${result.content?.headline_principal || result.content?.hook || "brand content"}`
+                        result.content?.slides?.[0]?.dica_visual ||
+                        `Professional ${mode === "criativo" ? "high-converting advertisement" : "viral social media post"} visual. Brand: modern, professional. Content: ${result.content?.headline_principal || result.content?.hook || "brand content"}. Style: clean, impactful, Instagram-ready. No text in image.`
                       handleGenerateImage(promptVisual)
                     }}
                     disabled={generatingImage}
                     className="bg-purple-600 hover:bg-purple-700 text-white"
                   >
-                    {generatingImage ? "🎨 Gerando imagem..." : "🖼️ Gerar Imagem com DALL-E 3"}
+                    {generatingImage ? "🎨 Gerando imagem..." : "🖼️ Gerar Criativo com DALL-E 3"}
                   </Button>
 
                   {generatedImage && (
