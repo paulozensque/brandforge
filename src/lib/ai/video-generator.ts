@@ -128,7 +128,7 @@ export async function getTalkStatus(talkId: string): Promise<TalkResult> {
     return {
       id: talkId,
       status: data.status || "started",
-      resultUrl: data.result_url || undefined,
+      resultUrl: data.result_url || data.resultUrl || undefined,
       error: data.error?.description || undefined,
     }
   } catch (error: any) {
