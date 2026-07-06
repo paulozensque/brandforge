@@ -37,6 +37,8 @@ export default function ConteudoPage() {
   const [savedMedias, setSavedMedias] = useState<string[]>([])
   const [generatedImage, setGeneratedImage] = useState<{ url?: string; prompt: string; generated: boolean; message?: string } | null>(null)
   const [generatingImage, setGeneratingImage] = useState(false)
+  const [generatedVideo, setGeneratedVideo] = useState<any>(null)
+  const [generatingVideo, setGeneratingVideo] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [videoPreview, setVideoPreview] = useState<string | null>(null)
 
@@ -94,6 +96,45 @@ export default function ConteudoPage() {
       alert("Erro ao gerar imagem")
     } finally {
       setGeneratingImage(false)
+    }
+  }
+
+  const handleGenerateVideo = async () => {
+    if (!photoPreview || !result) return
+    setGeneratingVideo(true)
+    setGeneratedVideo(null)
+    try {
+      // Get the script from the result
+      const script = result.content?.roteiro || result.content?.script || 
+                     result.content?.texto || result.content?.copy ||
+                     result.content?.headline_principal || 
+                     (typeof result.content === "string" ? result.content : JSON.stringify(result.content))
+
+      // Convert photo to base64 for upload
+      const response = await fetch(photoPreview)
+      const blob = await response.blob()
+      const reader = new FileReader()
+      
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+
+      const res = await fetch("/api/conteudo/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script: typeof script === "string" ? script.substring(0, 1000) : String(script).substring(0, 1000),
+          imageBase64: base64,
+        }),
+      })
+      
+      const data = await res.json()
+      setGeneratedVideo(data)
+    } catch (err) {
+      setGeneratedVideo({ success: false, error: "Erro ao gerar vídeo. Tente novamente." })
+    } finally {
+      setGeneratingVideo(false)
     }
   }
 
@@ -400,6 +441,81 @@ export default function ConteudoPage() {
                 <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
               )}
 
+              {/* Gerar Vídeo com IA (D-ID) */}
+              {format === "video" && photoPreview && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="font-semibold mb-3">🎬 Gerar Vídeo com IA (Avatar Falante)</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Usa a foto enviada para criar um vídeo com avatar falante o roteiro gerado. Powered by D-ID.
+                  </p>
+                  
+                  {generatedVideo ? (
+                    <div className="space-y-3">
+                      {generatedVideo.success && generatedVideo.videoUrl ? (
+                        <>
+                          <video 
+                            src={generatedVideo.videoUrl} 
+                            controls 
+                            className="w-full max-w-lg rounded-xl border shadow-lg"
+                          />
+                          <div className="flex gap-2">
+                            <a 
+                              href={generatedVideo.videoUrl} 
+                              target="_blank" 
+                              download
+                              className="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700"
+                            >
+                              ⬇️ Download Vídeo
+                            </a>
+                            <button 
+                              onClick={() => setGeneratedVideo(null)}
+                              className="text-xs border px-3 py-1.5 rounded-lg hover:bg-accent"
+                            >
+                              🔄 Gerar Novo
+                            </button>
+                          </div>
+                        </>
+                      ) : generatedVideo.error ? (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                          <p className="text-sm text-amber-800 font-medium">⚠️ {generatedVideo.error}</p>
+                          {!generatedVideo.configured && (
+                            <p className="text-xs text-amber-700 mt-1">
+                              Configure D_ID_API_KEY nas variáveis de ambiente. Crie uma conta em{" "}
+                              <a href="https://studio.d-id.com" target="_blank" className="underline">studio.d-id.com</a>
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="animate-spin w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                          Gerando vídeo...
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        {photoPreview && (
+                          <img src={photoPreview} alt="Avatar" className="w-16 h-16 rounded-lg object-cover border" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground">
+                            A IA vai animar a foto enviada e falar o roteiro gerado com voz em português.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleGenerateVideo}
+                        disabled={generatingVideo}
+                        className="bg-violet-600 hover:bg-violet-700 text-white"
+                      >
+                        {generatingVideo ? "🎬 Gerando vídeo (pode levar 1-2 min)..." : "🎬 Gerar Vídeo com Avatar IA"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Gerar Imagem com IA */}
               {(format === "imagem" || format === "carrossel") && (
                 <div className="border-t pt-4 mt-4">
@@ -426,7 +542,7 @@ export default function ConteudoPage() {
                             className="w-full max-w-md rounded-xl border shadow-lg"
                           />
                           <p className="text-xs text-muted-foreground">
-                            Prompt usado: {generatedImage.revised_prompt || generatedImage.prompt}
+                            Prompt usado: {(generatedImage as any).revised_prompt || generatedImage.prompt}
                           </p>
                         </div>
                       ) : (
