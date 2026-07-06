@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -37,7 +37,8 @@ export default function ConteudoPage() {
   const [savedMedias, setSavedMedias] = useState<string[]>([])
   const [generatedImage, setGeneratedImage] = useState<{ url?: string; prompt: string; generated: boolean; message?: string } | null>(null)
   const [generatingImage, setGeneratingImage] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [videoPreview, setVideoPreview] = useState<string | null>(null)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -110,79 +111,133 @@ export default function ConteudoPage() {
         <div className="bg-card rounded-xl border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-3">📸 Mídias da Empresa</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Envie os arquivos abaixo para que a IA crie conteúdos personalizados com sua imagem e voz.
+            Arraste ou clique para enviar seus arquivos. A IA usará como referência para criar conteúdos personalizados.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Foto */}
-            <div className="border-2 border-dashed rounded-xl p-5 text-center">
+            {/* Foto - Drag & Drop */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-emerald-400", "bg-emerald-50/50") }}
+              onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-emerald-400", "bg-emerald-50/50") }}
+              onDrop={(e) => {
+                e.preventDefault()
+                e.currentTarget.classList.remove("border-emerald-400", "bg-emerald-50/50")
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"))
+                if (files.length > 0) {
+                  setUploadedFiles((prev) => [...prev, ...files])
+                  setSavedMedias((prev) => [...prev, ...files.map((f) => `[FOTO] ${f.name}`)])
+                  // Create preview URL
+                  const url = URL.createObjectURL(files[0])
+                  setPhotoPreview(url)
+                }
+              }}
+              className="border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer hover:border-emerald-300"
+              onClick={() => (document.getElementById("photo-upload") as HTMLInputElement)?.click()}
+            >
               <input
-                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || [])
-                  setUploadedFiles((prev) => [...prev, ...files])
-                  setSavedMedias((prev) => [...prev, ...files.map((f) => `[FOTO] ${f.name}`)])
+                  if (files.length > 0) {
+                    setUploadedFiles((prev) => [...prev, ...files])
+                    setSavedMedias((prev) => [...prev, ...files.map((f) => `[FOTO] ${f.name}`)])
+                    const url = URL.createObjectURL(files[0])
+                    setPhotoPreview(url)
+                  }
                 }}
                 className="hidden"
                 id="photo-upload"
               />
-              <span className="text-4xl block mb-2">📷</span>
-              <h3 className="font-semibold text-sm mb-1">Foto do Rosto</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Envie uma foto <strong>clara, bem iluminada e com o rosto de quem irá aparecer</strong> nos conteúdos. Fundo neutro de preferência.
-              </p>
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                Enviar Foto
-              </Button>
-              {savedMedias.filter((m) => m.startsWith("[FOTO]")).length > 0 && (
-                <div className="mt-3 space-y-1">
-                  {savedMedias.filter((m) => m.startsWith("[FOTO]")).map((name, i) => (
-                    <div key={i} className="text-xs bg-emerald-50 text-emerald-700 rounded px-2 py-1 flex items-center gap-1">
-                      <span>✅</span> {name.replace("[FOTO] ", "")}
-                    </div>
-                  ))}
+              
+              {photoPreview ? (
+                <div className="space-y-2">
+                  <img src={photoPreview} alt="Preview" className="w-32 h-32 object-cover rounded-xl mx-auto border shadow-sm" />
+                  <p className="text-xs text-emerald-700 font-medium">✅ Foto carregada</p>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setPhotoPreview(null); setSavedMedias(prev => prev.filter(m => !m.startsWith("[FOTO]"))) }}
+                    className="text-[10px] text-red-500 hover:underline"
+                  >
+                    Remover
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <span className="text-4xl block mb-2">📷</span>
+                  <h3 className="font-semibold text-sm mb-1">Foto do Rosto</h3>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Arraste uma foto aqui ou clique para selecionar
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Foto clara, bem iluminada, rosto visível. Fundo neutro de preferência.
+                  </p>
+                </>
               )}
             </div>
 
-            {/* Vídeo */}
-            <div className="border-2 border-dashed rounded-xl p-5 text-center">
+            {/* Vídeo - Drag & Drop */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-blue-400", "bg-blue-50/50") }}
+              onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-blue-400", "bg-blue-50/50") }}
+              onDrop={(e) => {
+                e.preventDefault()
+                e.currentTarget.classList.remove("border-blue-400", "bg-blue-50/50")
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("video/"))
+                if (files.length > 0) {
+                  setUploadedFiles((prev) => [...prev, ...files])
+                  setSavedMedias((prev) => [...prev, ...files.map((f) => `[VIDEO] ${f.name}`)])
+                  const url = URL.createObjectURL(files[0])
+                  setVideoPreview(url)
+                }
+              }}
+              className="border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer hover:border-blue-300"
+              onClick={() => (document.getElementById("video-upload") as HTMLInputElement)?.click()}
+            >
               <input
                 type="file"
                 accept="video/*"
                 onChange={(e) => {
                   const files = Array.from(e.target.files || [])
-                  setUploadedFiles((prev) => [...prev, ...files])
-                  setSavedMedias((prev) => [...prev, ...files.map((f) => `[VIDEO] ${f.name}`)])
+                  if (files.length > 0) {
+                    setUploadedFiles((prev) => [...prev, ...files])
+                    setSavedMedias((prev) => [...prev, ...files.map((f) => `[VIDEO] ${f.name}`)])
+                    const url = URL.createObjectURL(files[0])
+                    setVideoPreview(url)
+                  }
                 }}
                 className="hidden"
                 id="video-upload"
               />
-              <span className="text-4xl block mb-2">🎥</span>
-              <h3 className="font-semibold text-sm mb-1">Vídeo com Voz</h3>
-              <p className="text-xs text-muted-foreground mb-3">
-                Envie um vídeo <strong>falando sobre a empresa, com a voz da pessoa que irá aparecer</strong> nos conteúdos. Mínimo 30 segundos.
-              </p>
-              <Button variant="outline" size="sm" onClick={() => (document.getElementById("video-upload") as HTMLInputElement)?.click()}>
-                Enviar Vídeo
-              </Button>
-              {savedMedias.filter((m) => m.startsWith("[VIDEO]")).length > 0 && (
-                <div className="mt-3 space-y-1">
-                  {savedMedias.filter((m) => m.startsWith("[VIDEO]")).map((name, i) => (
-                    <div key={i} className="text-xs bg-blue-50 text-blue-700 rounded px-2 py-1 flex items-center gap-1">
-                      <span>✅</span> {name.replace("[VIDEO] ", "")}
-                    </div>
-                  ))}
+              
+              {videoPreview ? (
+                <div className="space-y-2">
+                  <video src={videoPreview} className="w-full h-32 object-cover rounded-xl mx-auto border shadow-sm" controls />
+                  <p className="text-xs text-blue-700 font-medium">✅ Vídeo carregado</p>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setVideoPreview(null); setSavedMedias(prev => prev.filter(m => !m.startsWith("[VIDEO]"))) }}
+                    className="text-[10px] text-red-500 hover:underline"
+                  >
+                    Remover
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <span className="text-4xl block mb-2">🎥</span>
+                  <h3 className="font-semibold text-sm mb-1">Vídeo com Voz</h3>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Arraste um vídeo aqui ou clique para selecionar
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Vídeo falando sobre a empresa, mínimo 30 segundos. A IA usará como referência de voz.
+                  </p>
+                </>
               )}
             </div>
           </div>
 
-          {savedMedias.length === 0 && (
+          {!photoPreview && !videoPreview && (
             <p className="text-xs text-amber-600 mt-3">⚠️ Envie pelo menos uma foto e um vídeo para melhores resultados.</p>
           )}
-          {savedMedias.filter((m) => m.startsWith("[FOTO]")).length > 0 && savedMedias.filter((m) => m.startsWith("[VIDEO]")).length > 0 && (
+          {photoPreview && videoPreview && (
             <p className="text-xs text-emerald-600 mt-3">✅ Foto e vídeo enviados! A IA usará como referência para criar conteúdos personalizados.</p>
           )}
         </div>
