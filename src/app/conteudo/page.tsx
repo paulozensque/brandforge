@@ -110,39 +110,15 @@ export default function ConteudoPage() {
                      result.content?.headline_principal || 
                      (typeof result.content === "string" ? result.content : JSON.stringify(result.content))
 
-      // Convert photo to base64
-      const photoResponse = await fetch(photoPreview)
-      const photoBlob = await photoResponse.blob()
-      const photoBase64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.readAsDataURL(photoBlob)
-      })
-
-      // If video was uploaded, extract audio (send video as audio source)
-      let audioBase64: string | undefined
-      if (videoPreview) {
-        try {
-          const videoResponse = await fetch(videoPreview)
-          const videoBlob = await videoResponse.blob()
-          audioBase64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.readAsDataURL(videoBlob)
-          })
-        } catch {
-          // If audio extraction fails, fall back to TTS
-          console.log("Could not extract audio from video, using TTS")
-        }
-      }
+      // Compress photo to smaller base64 (max 512px) to avoid body size limits
+      const compressedPhoto = await compressImage(photoPreview, 512)
 
       const res = await fetch("/api/conteudo/generate-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           script: typeof script === "string" ? script.substring(0, 1000) : String(script).substring(0, 1000),
-          imageBase64: photoBase64,
-          audioBase64: audioBase64,
+          imageBase64: compressedPhoto,
         }),
       })
       
@@ -153,6 +129,28 @@ export default function ConteudoPage() {
     } finally {
       setGeneratingVideo(false)
     }
+  }
+
+  // Compress image to max size for upload
+  const compressImage = (src: string, maxSize: number): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        let w = img.width
+        let h = img.height
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = (h / w) * maxSize; w = maxSize }
+          else { w = (w / h) * maxSize; h = maxSize }
+        }
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL("image/jpeg", 0.85))
+      }
+      img.src = src
+    })
   }
 
   return (
