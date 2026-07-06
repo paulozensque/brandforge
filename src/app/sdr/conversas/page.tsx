@@ -113,9 +113,9 @@ export default function ConversasPage() {
 
   return (
     <AppShell>
-      <div className="flex h-[calc(100vh-64px)]">
+      <div className="h-[calc(100vh-16px)] flex">
         {/* Sidebar - Lista de conversas */}
-        <div className="w-80 border-r bg-card flex flex-col">
+        <div className="w-72 border-r bg-card flex flex-col flex-shrink-0">
           <div className="p-4 border-b">
             <h2 className="text-lg font-bold">💬 Conversas</h2>
             <p className="text-xs text-muted-foreground">{conversations.length} conversa(s)</p>
@@ -125,8 +125,8 @@ export default function ConversasPage() {
             {conversations.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 <span className="text-3xl block mb-2">💬</span>
-                <p className="text-sm">Nenhuma conversa ainda.</p>
-                <p className="text-xs mt-1">Mensagens recebidas no WhatsApp aparecerão aqui.</p>
+                <p className="text-sm">Nenhuma conversa.</p>
+                <p className="text-xs mt-1">Mensagens do WhatsApp aparecerão aqui.</p>
               </div>
             ) : (
               conversations.map((conv) => (
@@ -134,31 +134,31 @@ export default function ConversasPage() {
                   key={conv.id}
                   onClick={() => setSelectedConv(conv.id)}
                   className={`w-full p-3 border-b text-left hover:bg-accent transition-all ${
-                    selectedConv === conv.id ? "bg-accent border-l-2 border-l-emerald-500" : ""
+                    selectedConv === conv.id ? "bg-accent border-l-4 border-l-emerald-500" : ""
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">
                         {conv.lead.classification === "HOT" ? "🔥" : conv.lead.classification === "WARM" ? "☀️" : "👤"}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium truncate">{conv.lead.name || conv.lead.phone}</p>
-                        <span className="text-[10px] text-muted-foreground">{formatTime(conv.updatedAt)}</span>
+                        <p className="text-xs font-medium truncate">{conv.lead.name || conv.lead.phone}</p>
+                        <span className="text-[10px] text-muted-foreground flex-shrink-0">{formatTime(conv.updatedAt)}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-[11px] text-muted-foreground truncate">
                         {conv.messages?.[0]?.content || "..."}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${scoreColor(conv.lead.score)}`}>
-                          {conv.lead.score}/100
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className={`text-[9px] px-1 py-0.5 rounded ${scoreColor(conv.lead.score)}`}>
+                          {conv.lead.score}pts
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        <span className={`text-[9px] px-1 py-0.5 rounded ${
                           conv.status === "ACTIVE" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
                         }`}>
-                          {conv.status === "ACTIVE" ? "Ativa" : "Finalizada"}
+                          {conv.status === "ACTIVE" ? "Ativa" : "Fim"}
                         </span>
                       </div>
                     </div>
@@ -170,14 +170,14 @@ export default function ConversasPage() {
         </div>
 
         {/* Chat area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {selectedConversation ? (
             <>
               {/* Chat header */}
-              <div className="p-4 border-b bg-card flex items-center justify-between">
+              <div className="p-3 border-b bg-card flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <span className="text-lg">👤</span>
+                  <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span className="text-sm">👤</span>
                   </div>
                   <div>
                     <p className="font-semibold text-sm">
@@ -190,26 +190,32 @@ export default function ConversasPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${scoreColor(selectedConversation.lead.score)}`}>
-                    Score: {selectedConversation.lead.score}/100
+                    Score: {selectedConversation.lead.score}
                   </span>
-                  <Button variant="outline" size="sm" onClick={() => window.location.href = "/sdr/crm"}>
-                    📋 Ver no CRM
+                  <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.href = "/sdr/crm"}>
+                    📋 CRM
                   </Button>
                 </div>
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                {messages.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm">Carregando mensagens...</p>
+                  </div>
+                )}
                 {messages.map((msg, i) => (
                   <div key={msg.id || i} className={`flex ${msg.role === "USER" ? "justify-start" : "justify-end"}`}>
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                       msg.role === "USER" 
-                        ? "bg-white border shadow-sm rounded-tl-sm" 
-                        : "bg-emerald-500 text-white rounded-tr-sm"
+                        ? "bg-white border shadow-sm rounded-bl-sm" 
+                        : "bg-emerald-500 text-white rounded-br-sm"
                     }`}>
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                       <p className={`text-[10px] mt-1 ${msg.role === "USER" ? "text-muted-foreground" : "text-emerald-100"}`}>
                         {new Date(msg.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        {msg.role === "ASSISTANT" && " • 🤖"}
                       </p>
                     </div>
                   </div>
@@ -217,18 +223,18 @@ export default function ConversasPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Footer info */}
-              <div className="p-3 border-t bg-card">
+              {/* Footer */}
+              <div className="p-3 border-t bg-card flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    🤖 SDR IA respondendo automaticamente • {messages.length} mensagens
+                    🤖 SDR IA respondendo • {messages.length} msgs
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="text-xs h-7">
-                      ⏸️ Pausar IA
+                      ⏸️ Pausar
                     </Button>
                     <Button variant="outline" size="sm" className="text-xs h-7">
-                      👤 Assumir conversa
+                      👤 Assumir
                     </Button>
                   </div>
                 </div>
@@ -239,7 +245,7 @@ export default function ConversasPage() {
               <div>
                 <span className="text-5xl block mb-4">💬</span>
                 <p className="text-lg font-medium">Selecione uma conversa</p>
-                <p className="text-sm">Clique em uma conversa à esquerda para ver as mensagens.</p>
+                <p className="text-sm">Clique em uma conversa à esquerda.</p>
               </div>
             </div>
           )}
