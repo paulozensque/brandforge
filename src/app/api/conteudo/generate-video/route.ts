@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
     if (!sourceUrl && imageBase64) {
       sourceUrl = await uploadImageToDID(imageBase64)
       if (!sourceUrl) {
-        return NextResponse.json({ success: false, error: "Erro ao fazer upload da imagem" }, { status: 500 })
+        return NextResponse.json({ 
+          success: false, 
+          error: "Erro ao fazer upload da imagem para D-ID. Verifique se a D_ID_API_KEY está correta e a imagem é válida (JPEG/PNG, com rosto visível)." 
+        }, { status: 500 })
       }
     }
 

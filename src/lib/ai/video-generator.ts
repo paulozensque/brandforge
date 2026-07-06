@@ -28,20 +28,27 @@ interface TalkResult {
 }
 
 // Upload audio to D-ID
-export async function uploadAudioToDID(audioBase64: string, mimeType: string = "audio/mpeg"): Promise<string | null> {
+export async function uploadAudioToDID(audioBase64: string): Promise<string | null> {
   if (!D_ID_API_KEY) return null
 
   try {
-    const base64Data = audioBase64.replace(/^data:audio\/\w+;base64,/, "").replace(/^data:video\/\w+;base64,/, "")
+    const matches = audioBase64.match(/^data:(.+);base64,(.+)$/)
+    if (!matches) return null
+
+    const contentType = matches[1]
+    const base64Data = matches[2]
     const buffer = Buffer.from(base64Data, "base64")
+
+    const blob = new Blob([buffer], { type: contentType })
+    const formData = new FormData()
+    formData.append("audio", blob, "voice.mp3")
 
     const res = await fetch(`${D_ID_BASE_URL}/audios`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${D_ID_API_KEY}`,
-        "Content-Type": mimeType,
       },
-      body: buffer,
+      body: formData,
     })
 
     if (!res.ok) {
@@ -50,7 +57,7 @@ export async function uploadAudioToDID(audioBase64: string, mimeType: string = "
     }
 
     const data = await res.json()
-    return data.url || data.id || null
+    return data.url || null
   } catch (error: any) {
     console.error("D-ID audio upload error:", error?.message)
     return null
@@ -62,26 +69,39 @@ export async function uploadImageToDID(imageBase64: string): Promise<string | nu
   if (!D_ID_API_KEY) return null
 
   try {
-    // Convert base64 to buffer
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "")
+    // Extract the actual base64 data and content type
+    const matches = imageBase64.match(/^data:(.+);base64,(.+)$/)
+    if (!matches) {
+      console.error("Invalid base64 format")
+      return null
+    }
+
+    const contentType = matches[1]
+    const base64Data = matches[2]
     const buffer = Buffer.from(base64Data, "base64")
+
+    // D-ID requires multipart form-data for image upload
+    const ext = contentType.includes("png") ? "png" : "jpg"
+    const blob = new Blob([buffer], { type: contentType })
+    const formData = new FormData()
+    formData.append("image", blob, `photo.${ext}`)
 
     const res = await fetch(`${D_ID_BASE_URL}/images`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${D_ID_API_KEY}`,
-        "Content-Type": "image/png",
       },
-      body: buffer,
+      body: formData,
     })
 
     if (!res.ok) {
-      console.error("D-ID upload error:", res.status, await res.text())
+      const errText = await res.text().catch(() => "")
+      console.error("D-ID upload error:", res.status, errText)
       return null
     }
 
     const data = await res.json()
-    return data.url || data.id || null
+    return data.url || null
   } catch (error: any) {
     console.error("D-ID upload error:", error?.message)
     return null
