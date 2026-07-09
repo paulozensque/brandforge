@@ -113,6 +113,7 @@ export default function ConteudoPage() {
       // Compress photo to smaller base64 (max 512px) to avoid body size limits
       const compressedPhoto = await compressImage(photoPreview, 512)
 
+      // Step 1: Start video generation (returns talkId immediately)
       const res = await fetch("/api/conteudo/generate-video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,12 +124,68 @@ export default function ConteudoPage() {
       })
       
       const data = await res.json()
-      setGeneratedVideo(data)
+      
+      if (!data.success) {
+        setGeneratedVideo(data)
+        setGeneratingVideo(false)
+        return
+      }
+
+      // Step 2: Poll for completion
+      if (data.talkId) {
+        setGeneratedVideo({ success: true, status: "processing", message: "Gerando vídeo... aguarde 30-60 segundos" })
+        pollVideoStatus(data.talkId)
+      } else if (data.videoUrl) {
+        setGeneratedVideo(data)
+        setGeneratingVideo(false)
+      }
     } catch (err) {
       setGeneratedVideo({ success: false, error: "Erro ao gerar vídeo. Tente novamente." })
-    } finally {
       setGeneratingVideo(false)
     }
+  }
+
+  const pollVideoStatus = async (talkId: string) => {
+    const maxAttempts = 40 // 40 * 3s = 2 min max
+    let attempts = 0
+
+    const poll = async () => {
+      attempts++
+      try {
+        const res = await fetch("/api/conteudo/generate-video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "status", talkId }),
+        })
+        const data = await res.json()
+
+        if (data.status === "done" && data.resultUrl) {
+          setGeneratedVideo({ success: true, videoUrl: data.resultUrl })
+          setGeneratingVideo(false)
+          return
+        }
+
+        if (data.status === "error") {
+          setGeneratedVideo({ success: false, error: data.error || "Erro ao gerar vídeo" })
+          setGeneratingVideo(false)
+          return
+        }
+
+        if (attempts >= maxAttempts) {
+          setGeneratedVideo({ success: false, error: "Timeout: vídeo demorou demais. Tente novamente." })
+          setGeneratingVideo(false)
+          return
+        }
+
+        // Keep polling
+        setTimeout(poll, 3000)
+      } catch {
+        setGeneratedVideo({ success: false, error: "Erro ao verificar status" })
+        setGeneratingVideo(false)
+      }
+    }
+
+    setTimeout(poll, 5000) // First check after 5s
   }
 
   // Compress image to max size for upload
@@ -492,6 +549,16 @@ export default function ConteudoPage() {
                             </button>
                           </div>
                         </>
+                      ) : generatedVideo.success && generatedVideo.status === "processing" ? (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                            <div>
+                              <p className="text-sm font-medium text-blue-800">Gerando vídeo...</p>
+                              <p className="text-xs text-blue-600">{generatedVideo.message || "Aguarde 30-60 segundos"}</p>
+                            </div>
+                          </div>
+                        </div>
                       ) : generatedVideo.error ? (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <p className="text-sm text-amber-800 font-medium">⚠️ {generatedVideo.error}</p>
